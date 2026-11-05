@@ -4,6 +4,8 @@ An accessible, buildless HTML adaptation of the supplied Lab 5 worksheet and pre
 
 ## Student experience
 
+- Navigation below the banner becomes an accessible tab strip with one section visible at a time. Longer sections use Previous/Next pages to keep related content in manageable screen-sized groups. Left/Right arrows, Home, and End navigate tabs. Deep links such as `#read/2` open a specific page. Without JavaScript, all content remains available as a continuous document. Print includes all panels.
+- Include `tabs.js` and `tabs.css` with the other assets when publishing. Expanded explanations, small screens, or zoom may require vertical scrolling; no fixed-height content clipping is used.
 - Four lab parts with vocabulary, tree interpretation prompts, reference matrix layouts, NOVA instructions, source Caminalcule images and descriptions, external tree-construction instructions, and taxonomy practice.
 - Students type every answer in a separate document and construct their matrices and tree externally. There are no input fields, textareas, selects, forms, upload controls, or editable page regions.
 - An opening practice tree starts with five characteristics outside the tree. Students drag them to branch positions or use click/tap/keyboard selection. Immediate feedback explains whether the placement fits the observed taxa, including missing or extra descendants. Traits can be moved repeatedly, returned to the bank, or reset. Occupied positions return their previous trait to the bank.
