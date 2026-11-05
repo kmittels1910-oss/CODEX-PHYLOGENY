@@ -3,8 +3,8 @@
   const nav=document.querySelector('nav[aria-label="Lab sections"]');
   const main=document.getElementById('main');
   if(!nav||!main)return;
-  const sections=[...main.children].filter(e=>e.tagName==='SECTION');
   const tabs=[...nav.querySelectorAll('a')];
+  const sections=tabs.map(tab=>document.getElementById(tab.getAttribute('href').slice(1)));
   const pages=new Map(),current=new Map();
   const pageNames={start:['Guide','Concepts'],read:['Tree','Practice 1','Practice 2','Practice 3','Matrix','Explain'],practice:['NOVA'],build:['Explore','Define traits','Matrix','TA check-in','Record tree','Test hypothesis'],groups:['Groups','Practice 1','Practice 2','Practice 3','Apply'],exit:['Tree','Questions 1–5','Questions 6–10'],submit:['Submit']};
   const make=(tag,cls)=>{const e=document.createElement(tag);if(cls)e.className=cls;return e};
