@@ -1,4 +1,10 @@
-.cam-workspace{display:grid;grid-template-columns:minmax(280px,.85fr) minmax(0,1fr);gap:1rem;align-items:start;max-width:1000px}
+.cam-workspace{display:grid;grid-template-columns:230px minmax(0,1fr);gap:1rem;align-items:start;max-width:1080px}
+.cam-stage{display:grid;grid-template-columns:minmax(0,1fr) 245px;gap:.8rem;align-items:start}
+.cam-nearby{margin-top:var(--cam-feedback-offset,0);min-width:0;background:#fff;border:1px solid #b6c6b9;border-radius:8px;padding:.7rem}
+.cam-nearby .cam-feedback-heading{margin:0;font-size:1rem}
+.cam-nearby .cam-feedback{border:0;padding:0;margin:.5rem 0 0;font-size:.85rem}
+.cam-nearby .cam-placement-lead{font-weight:750}
+.cam-nearby details{font-size:.8rem;padding:.5rem!important}
 .cam-bank{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem;min-height:100px;border:2px dashed #81998a;padding:.65rem;border-radius:8px}
 .cam-bank>p{grid-column:1/-1}
 .cam-bank .taxon-token{flex-direction:column;justify-content:center;text-align:center;min-height:160px;padding:.5rem;font-size:.95rem}
@@ -33,6 +39,7 @@
 .cam-detail-specimen{float:left;width:150px;height:150px;object-fit:contain;background:white;margin:0 1rem .5rem 0;border-radius:6px}
 .cam-selected-detail::after{content:"";display:block;clear:both}
 .cam-feedback-heading{font-size:1rem;margin:1rem 0 0}
-@media(max-width:800px){.cam-workspace{grid-template-columns:minmax(0,1fr)}.cam-bank{grid-template-columns:repeat(3,minmax(0,1fr))}.cam-bank .taxon-token{min-height:140px}.cam-bank .taxon-token img{height:105px}.cam-tree-area{width:100%;max-width:540px;margin:auto}.cam-bank-actions{display:flex;gap:.5rem}.cam-canvas{width:100%}}
+@media(max-width:1000px){.cam-workspace{grid-template-columns:minmax(0,1fr)}.cam-bank{grid-template-columns:repeat(3,minmax(0,1fr))}.cam-bank .taxon-token{min-height:140px}.cam-bank .taxon-token img{height:105px}.cam-tree-area{width:100%;max-width:800px;margin:auto}.cam-bank-actions{display:flex;gap:.5rem}.cam-canvas{width:100%}}
+@media(max-width:600px){.cam-stage{grid-template-columns:minmax(0,1fr)}.cam-nearby{margin-top:0}.cam-nearby .cam-feedback{font-size:.9rem}}
 @media(max-width:420px){.cam-bank{grid-template-columns:repeat(2,minmax(0,1fr))}.cam-tip{right:48%}.cam-tip .taxon-token img{width:48px;height:60px}.cam-tip .taxon-token{font-size:.75rem}.cam-tip-target{min-height:44px}.cam-detail-specimen{width:110px;height:125px}.cam-tip .taxon-description{width:220px}}
 @media print{.taxon-description{display:none!important}.cam-shape-controls,.cam-bank-actions{display:none}.cam-workspace{grid-template-columns:160px 1fr}}

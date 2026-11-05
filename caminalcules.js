@@ -62,15 +62,23 @@ if(typeof document!=='undefined')(()=>{
   const root=document.getElementById('cam-explorer');if(!root)return;
   const {data,characters,trees,labels,score,observe,placement}=CaminalculeModel;
   const bank=document.getElementById('cam-bank'),canvas=document.getElementById('cam-canvas'),feedback=document.getElementById('cam-observations');
+  const stage=document.createElement('div');stage.className='cam-stage';canvas.before(stage);stage.append(canvas);
+  const nearby=document.createElement('aside');nearby.className='cam-nearby';nearby.setAttribute('aria-label','Placement commentary');
+  nearby.append(root.querySelector('.cam-feedback-heading'),feedback);stage.append(nearby);
   let assigned=Array(6).fill(null),selected=null,shape=0,inspected=null,lastTip=null;
   const make=(tag,text,cls)=>{const e=document.createElement(tag);if(text)e.textContent=text;if(cls)e.className=cls;return e};
   let tipId=0;
+  function selectTaxon(id){
+    selected=selected===id?null:id;inspected=id;render();
+    root.querySelector(`[data-cam-taxon="${id}"]`).focus();
+    document.getElementById('cam-selection-status').textContent=selected?`Taxon ${id} selected. Click another tip space to move it.`:'Selection cleared.';
+  }
   function token(id){
     const card=make('div',null,'taxon-card');const b=make('button',null,'taxon-token');b.type='button';b.dataset.camTaxon=id;
     b.setAttribute('aria-pressed',String(selected===id));b.setAttribute('aria-describedby',`cam-desc-${++tipId}`);
     const img=make('img');img.src=`assets/${data[id].image}`;img.alt='';img.draggable=false;b.append(img,make('span',`Taxon ${id}${id==='A'?' · Outgroup':''}`));
     const desc=make('div',data[id].description,'taxon-description');desc.id=`cam-desc-${tipId}`;desc.setAttribute('role','tooltip');
-    b.addEventListener('click',()=>{selected=selected===id?null:id;inspected=id;render();root.querySelector(`[data-cam-taxon="${id}"]`).focus();document.getElementById('cam-selection-status').textContent=selected?`Taxon ${id} selected. Click a tip space to place it.`:'Selection cleared. Click a taxon, then a tip space.'});
+    b.addEventListener('click',()=>selectTaxon(id));
     card.addEventListener('keydown',e=>{if(e.key==='Escape'){card.classList.add('dismissed');e.stopPropagation()}});
     card.addEventListener('pointerenter',()=>card.classList.remove('dismissed'));
     b.addEventListener('focus',()=>card.classList.remove('dismissed'));
@@ -82,11 +90,20 @@ if(typeof document!=='undefined')(()=>{
     function pairs(t){if(typeof t==='number')return;if(t.every(c=>typeof c==='number')){const [a,b]=t.map(i=>assigned[i]);if(a&&b)notes.push(observe(a,b));}t.forEach(pairs)}pairs(trees[shape]);
     if(count===6){const scores=trees.map(t=>score(t,assigned));notes.push(`Illustrative parsimony comparison for these same tip assignments: ${scores.map((s,i)=>labels[i]+': '+s+' changes').join('; ')}. These are minimum changes across five pre-coded binary observations, allowing gains and losses. Fewer changes favor a hypothesis under this criterion, but do not establish a correct tree. Your own character definitions, scores, and uncertain observations may produce different results.`)}
     notes.push('In your external document, identify one strength, one tradeoff, and evidence that could change your hypothesis. Tip order alone does not determine relatedness.');
-    feedback.replaceChildren(...notes.map(n=>make('p',n)));
+    const focused=lastTip===null?[]:placement(trees[shape],assigned,lastTip);
+    const lead=focused[0]||'Select a taxon, then click a tip space.';
+    const strength=focused.find(n=>/^(Good fit|Poor fit|Rooting concern|Evidence pending|Potential strength|Limited support)/.test(n));
+    const tradeoff=focused.find(n=>/^Tradeoff/.test(n));
+    feedback.replaceChildren(make('p',lead,'cam-placement-lead'));
+    if(strength)feedback.append(make('p',strength));
+    if(tradeoff)feedback.append(make('p',tradeoff));
+    const more=make('details');more.append(make('summary','More evidence and comparisons'));notes.forEach(n=>more.append(make('p',n)));feedback.append(more);
+    nearby.style.setProperty('--cam-feedback-offset',`${lastTip===null?0:Math.min(lastTip*36,140)}px`);
   }
   function place(i,id=selected){
+    if(!id&&assigned[i]){selectTaxon(assigned[i]);return}
     if(!data[id]){feedback.textContent='Select a taxon first, then choose a tip.';return}
-    const displaced=assigned[i];assigned=assigned.map(x=>x===id?null:x);assigned[i]=id;inspected=id;selected=null;lastTip=i;render();observations();canvas.querySelectorAll('.cam-tip-target')[i].focus();document.getElementById('cam-selection-status').textContent=`Taxon ${id} placed at tip ${i+1}. See the placement feedback below the tree.`;
+    const displaced=assigned[i];assigned=assigned.map(x=>x===id?null:x);assigned[i]=id;inspected=id;selected=null;lastTip=i;render();observations();canvas.querySelectorAll('.cam-tip-target')[i].focus();document.getElementById('cam-selection-status').textContent=`Taxon ${id} placed at tip ${i+1}. See the placement commentary beside the tree.`;
     if(displaced&&displaced!==id)feedback.prepend(make('p',`Taxon ${displaced} returned to the bank because that tip was occupied.`));
   }
   function render(){
