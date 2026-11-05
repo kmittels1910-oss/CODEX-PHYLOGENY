@@ -1,4 +1,5 @@
-.cam-workspace{display:grid;grid-template-columns:230px minmax(0,1fr);gap:1rem;align-items:start;max-width:1080px}
+.tabbed-lab main:has(> #build:not([hidden])){max-width:1360px}
+.cam-workspace{display:grid;grid-template-columns:340px minmax(0,1fr);gap:1.25rem;align-items:start;max-width:1320px}
 .cam-stage{display:block;min-width:0}
 .cam-nearby{position:fixed;inset:auto;margin:0;z-index:100;max-width:calc(100vw - 24px);max-height:min(70vh,460px);overflow-y:auto;overscroll-behavior:contain;background:#fff;border:2px solid #658873;border-radius:10px;padding:1rem;box-shadow:0 8px 32px #0004}
 .cam-popup-close{float:right;font-size:.8rem;padding:.3rem .5rem;margin:0 0 .5rem .5rem}
@@ -9,7 +10,7 @@
 .cam-bank{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem;min-height:100px;border:2px dashed #81998a;padding:.65rem;border-radius:8px}
 .cam-bank>p{grid-column:1/-1}
 .cam-bank .taxon-token{flex-direction:column;justify-content:center;text-align:center;min-height:160px;padding:.5rem;font-size:.95rem}
-.cam-bank .taxon-token img{width:100%;height:125px;max-width:145px}
+.cam-bank .taxon-token img{width:100%;height:135px;max-width:190px}
 .cam-bank .taxon-card:nth-child(even) .taxon-description{left:auto;right:0}
 .taxon-card{position:relative;min-width:0}
 .taxon-token{display:flex;align-items:center;gap:.5rem;width:100%;padding:.3rem;background:white;color:#183b35;border:1px solid #81998a;font-size:.85rem;line-height:1.2;text-align:left;cursor:pointer}
@@ -20,14 +21,14 @@
 .taxon-card:hover>.taxon-description,.taxon-card:focus-within>.taxon-description{display:block}
 .taxon-card.dismissed>.taxon-description{display:none}
 .cam-tree-area{min-width:0}
-.cam-canvas{position:relative;aspect-ratio:1;min-height:540px;max-width:540px;background:white;border:1px solid var(--line);border-radius:8px}
+.cam-canvas{position:relative;aspect-ratio:1.5;min-height:540px;width:100%;max-width:900px;background:white;border:1px solid var(--line);border-radius:8px}
 .lab-page .cam-canvas svg{display:block;position:absolute;inset:0;width:100%;height:100%;max-height:none}
 .cam-branch{stroke:#264b3d;stroke-width:3;fill:none}
 .cam-tip{position:absolute;left:1%;right:57.5%;display:flex;align-items:center;gap:.3rem;transform:translateY(-50%);min-height:72px}
 .cam-tip-target{font-size:.75rem;padding:.3rem;min-width:44px;flex:none}
 .cam-tip .taxon-card{flex:1}
 .cam-tip .taxon-token{font-size:.8rem;padding:.2rem;gap:.3rem;min-height:72px}
-.cam-tip .taxon-token img{width:60px;height:66px}
+.cam-tip .taxon-token img{width:90px;height:72px}
 .cam-tip .taxon-description{left:0;right:auto}
 .cam-empty{font-size:.8rem;color:#526b60}
 .cam-bank-actions button{font-size:.8rem;padding:.4rem;width:100%;margin:.4rem 0}
