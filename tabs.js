@@ -6,12 +6,14 @@
   const sections=[...main.children].filter(e=>e.tagName==='SECTION');
   const tabs=[...nav.querySelectorAll('a')];
   const pages=new Map(),current=new Map();
+  const pageNames={start:['Guide','Concepts'],read:['Tree','Practice 1','Practice 2','Practice 3','Matrix','Explain'],practice:['NOVA'],build:['Explore','Define traits','Matrix','TA check-in','Record tree','Test hypothesis'],groups:['Groups','Practice 1','Practice 2','Practice 3','Apply'],exit:['Tree','Questions 1–5','Questions 6–10'],submit:['Submit']};
   const make=(tag,cls)=>{const e=document.createElement(tag);if(cls)e.className=cls;return e};
   // Keep each meaningful task together; split question sets into small batches.
   sections.forEach(section=>{
     const chunks=[];let chunk=[];
     const flush=()=>{if(chunk.length){chunks.push(chunk);chunk=[]}};
     [...section.children].forEach(node=>{
+      if(node.matches('p.eyebrow'))return;
       if(node.matches('.checks')){
         flush();const cards=[...node.children];
         for(let i=0;i<cards.length;i+=2){const grid=make('div','checks');cards.slice(i,i+2).forEach(c=>grid.append(c));chunks.push([grid])}
@@ -29,20 +31,15 @@
     section.replaceChildren();const panelPages=[];
     chunks.forEach((nodes,i)=>{
       const page=make('div','lab-page');page.id=`${section.id}-page-${i+1}`;
-      if(i>0){const context=make('p','eyebrow');context.textContent=title;page.append(context);if(nodes[0].tagName!=='H3'){const h=make('h3');h.textContent=nodes[0].matches('.checks')?'Reason through the examples':`Questions ${1+(i-1)*5}–${Math.min((i)*5,10)}`;page.append(h)}}
+      if(i>0&&nodes[0].tagName!=='H3'){const h=make('h3','sr-only');h.textContent=pageNames[section.id]?.[i]||'Activity';page.append(h)}
       nodes.forEach(n=>page.append(n));section.append(page);panelPages.push(page);
     });
     pages.set(section.id,panelPages);current.set(section.id,0);
-    const stepper=make('div','page-controls');stepper.setAttribute('aria-label','Activity pages');
-    const previous=make('button');previous.type='button';previous.textContent='← Previous';
-    const status=make('span');status.setAttribute('aria-live','polite');
-    const next=make('button');next.type='button';next.textContent='Next →';
-    stepper.append(previous,status,next);section.prepend(stepper);
-    function step(delta){const at=sections.indexOf(section),n=current.get(section.id)+delta;if(n<0&&at>0)activate(at-1,pages.get(sections[at-1].id).length-1,true);else if(n>=panelPages.length&&at<sections.length-1)activate(at+1,0,true);else activate(at,n,true)}
-    previous.addEventListener('click',()=>step(-1));next.addEventListener('click',()=>step(1));
+    const stepper=make('nav','page-controls');stepper.setAttribute('aria-label','Activities in this tab');
+    const pageButtons=panelPages.map((p,i)=>{const b=make('button');b.type='button';b.textContent=pageNames[section.id]?.[i]||`Activity ${i+1}`;b.setAttribute('aria-controls',p.id);b.addEventListener('click',()=>activate(sections.indexOf(section),i,false));stepper.append(b);return b});
+    if(panelPages.length>1)section.prepend(stepper);
     section._update=(n)=>{
-      panelPages.forEach((p,i)=>p.hidden=i!==n);status.textContent=`Page ${n+1} of ${panelPages.length}`;
-      previous.disabled=sections.indexOf(section)===0&&n===0;next.disabled=sections.indexOf(section)===sections.length-1&&n===panelPages.length-1;
+      panelPages.forEach((p,i)=>p.hidden=i!==n);pageButtons.forEach((b,i)=>b.setAttribute('aria-pressed',String(i===n)));
     };
     section.setAttribute('role','tabpanel');section.tabIndex=0;
   });
