@@ -1,0 +1,17 @@
+.trait-bank{display:flex;flex-wrap:wrap;gap:.7rem;min-height:80px;padding:1rem;border:2px dashed #768e80;border-radius:8px;margin-bottom:1rem}
+.trait-token{background:#fff8e6;color:#243f34;border-color:#897041;cursor:grab;white-space:normal;line-height:1.3}
+.trait-token:hover{background:#f6e4b6;color:#243f34}
+.trait-token[aria-pressed=true]{background:#193f34;color:#fff;outline:3px solid #974700;outline-offset:3px}
+.practice-tree{position:relative;min-width:950px;background:#fff}
+.practice-tree svg{display:block}
+.practice-guides path{stroke:#8d571b;stroke-width:3;stroke-dasharray:5 4;fill:none}
+.root-label{font:15px system-ui;fill:#183b35}
+.trait-slot{position:absolute;top:68.75%;transform:translateX(-50%);width:125px;min-height:150px;border:2px dashed #73897e;border-radius:8px;background:#f4f6ef;padding:.4rem;text-align:center}
+.slot-target{font-size:.85rem;padding:.4rem;width:100%}
+.placed-trait{min-height:56px;margin:.5rem 0}
+.placed-trait .trait-token{width:100%;padding:.4rem;font-size:.85rem}
+.placement-status{display:block;font-size:.78rem;font-weight:700;line-height:1.3}
+.placement-correct{border:3px solid #176346;background:#edf6ed}
+.placement-incorrect{border:3px solid #995319;background:#fff4e9}
+.practice-feedback{padding:1rem;border-left:4px solid #8d571b;background:#fff;min-height:6rem}
+@media print{#warmup .table-wrap{overflow:hidden}.practice-tree{min-width:0}.trait-slot{display:none}.practice-tree svg{max-height:none}.practice-feedback{display:none}}
