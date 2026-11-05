@@ -55,20 +55,53 @@ const CaminalculeModel = (()=>{
     }
     return notes;
   }
-  return {data,characters,trees,labels,score,observe,placement};
+  function patternChange(before,after,assigned){
+    function groups(tree){const result=[];function walk(t){if(typeof t==='number')return [t];const tips=t.flatMap(walk);if(tips.length>1&&tips.length<5)result.push(tips.sort((a,b)=>a-b));return tips}walk(tree);return result}
+    const old=groups(trees[before]),next=groups(trees[after]);
+    const key=t=>t.join(','),describe=t=>t.map(i=>assigned[i]?'taxon '+assigned[i]:'unassigned tip '+(i+1)).join(' + ');
+    const added=next.filter(t=>!old.some(o=>key(o)===key(t))),removed=old.filter(t=>!next.some(o=>key(o)===key(t)));
+    const notes=[`Branching pattern changed from ${labels[before]} to ${labels[after]}. Taxa stay at the same numbered tips; their relationships may change.`];
+    added.forEach(t=>notes.push(`New clade in this pattern: ${describe(t)}.`));
+    removed.forEach(t=>notes.push(`No longer a clade in this pattern: ${describe(t)}.`));
+    notes.push('Tip 1 remains the outgroup branch. Mirroring or rotating the drawing alone would not change relationships; this control changes the branching connections.');
+    for(const t of added.filter(t=>t.length===2)){const [a,b]=t.map(i=>assigned[i]);if(a&&b)notes.push(observe(a,b))}
+    const previous=score(trees[before],assigned),current=score(trees[after],assigned);
+    if(current===null)notes.push('Some tips are unassigned, so a whole-tree change-count comparison is not yet available. Fill the remaining tips, then compare patterns using the same taxa and characters.');
+    else notes.push(`Parsimony comparison: ${previous} → ${current} minimum changes across the five provisional characters. ${current<previous?'This pattern needs '+(previous-current)+' fewer changes, giving it stronger support under this criterion.':current>previous?'This pattern needs '+(current-previous)+' more changes, a tradeoff under this criterion.':'Both patterns have equal change counts; these characters do not favor one over the other by total parsimony score.'} This compares only these two scaffolds, not all possible trees; the lower score does not prove a true history [2, 3].`);
+    return notes;
+  }
+  return {data,characters,trees,labels,score,observe,placement,patternChange};
 })();
 if(typeof module!=='undefined')module.exports=CaminalculeModel;
 if(typeof document!=='undefined')(()=>{
   const root=document.getElementById('cam-explorer');if(!root)return;
-  const {data,characters,trees,labels,score,observe,placement}=CaminalculeModel;
+  const {data,characters,trees,labels,score,observe,placement,patternChange}=CaminalculeModel;
   const bank=document.getElementById('cam-bank'),canvas=document.getElementById('cam-canvas'),feedback=document.getElementById('cam-observations');
   const stage=document.createElement('div');stage.className='cam-stage';canvas.before(stage);stage.append(canvas);
-  const nearby=document.createElement('aside');nearby.className='cam-nearby';nearby.setAttribute('aria-label','Placement commentary');
-  nearby.append(root.querySelector('.cam-feedback-heading'),feedback);stage.append(nearby);
+  const nearby=document.createElement('aside');nearby.className='cam-nearby';nearby.setAttribute('popover','auto');nearby.setAttribute('role','dialog');nearby.setAttribute('aria-modal','false');nearby.setAttribute('aria-labelledby','cam-popup-title');
+  const heading=root.querySelector('.cam-feedback-heading');heading.id='cam-popup-title';nearby.append(heading,feedback);stage.append(nearby);
+  const nativePopover=typeof nearby.showPopover==='function';if(!nativePopover)nearby.hidden=true;
+  const close=document.createElement('button');close.type='button';close.className='cam-popup-close';close.textContent='Close feedback';nearby.prepend(close);
+  const reopen=document.createElement('button');reopen.type='button';reopen.textContent='Show feedback';reopen.className='secondary';document.getElementById('cam-shape').after(reopen);
+  let popupOpener=null;
+  function closeFeedback(restore=false){if(nativePopover){if(nearby.matches(':popover-open'))nearby.hidePopover()}else nearby.hidden=true;if(restore&&popupOpener?.isConnected)popupOpener.focus()}
+  function openFeedback(anchor){
+    popupOpener=anchor||reopen;
+    const rect=popupOpener.getBoundingClientRect(),width=Math.min(420,window.innerWidth-24);
+    nearby.style.width=width+'px';nearby.style.left=Math.max(12,Math.min(rect.right+10,window.innerWidth-width-12))+'px';
+    nearby.style.top=Math.max(12,Math.min(rect.top,window.innerHeight-Math.min(460,window.innerHeight*.7)-12))+'px';
+    if(nativePopover){if(!nearby.matches(':popover-open'))nearby.showPopover()}else nearby.hidden=false;
+    close.focus({preventScroll:true});
+  }
+  close.addEventListener('click',()=>closeFeedback(true));reopen.addEventListener('click',()=>openFeedback(reopen));
+  document.addEventListener('pointerdown',e=>{if(!nativePopover&&!nearby.hidden&&!nearby.contains(e.target)&&!reopen.contains(e.target))closeFeedback()});
+  nearby.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();closeFeedback(true)}});
+  window.addEventListener('resize',()=>closeFeedback());
   let assigned=Array(6).fill(null),selected=null,shape=0,inspected=null,lastTip=null;
   const make=(tag,text,cls)=>{const e=document.createElement(tag);if(text)e.textContent=text;if(cls)e.className=cls;return e};
   let tipId=0;
   function selectTaxon(id){
+    closeFeedback();
     selected=selected===id?null:id;inspected=id;render();
     root.querySelector(`[data-cam-taxon="${id}"]`).focus();
     document.getElementById('cam-selection-status').textContent=selected?`Taxon ${id} selected. Click another tip space to move it.`:'Selection cleared.';
@@ -85,6 +118,7 @@ if(typeof document!=='undefined')(()=>{
     card.append(b,desc);return card;
   }
   function observations(){
+    heading.textContent='Placement feedback';
     const count=assigned.filter(Boolean).length;let notes=[...(lastTip===null?[]:placement(trees[shape],assigned,lastTip)),`${count} of 6 taxa placed. This is a hypothesis, not a right/wrong score.`];
     if(assigned[0])notes.push(assigned[0]==='A'?'A occupies the outgroup branch, matching the lab’s rooting assumption.':'Consider rooting: the first branch currently holds '+assigned[0]+'. The lab designates A as the outgroup; move A to tip 1 to follow that assumption.');
     function pairs(t){if(typeof t==='number')return;if(t.every(c=>typeof c==='number')){const [a,b]=t.map(i=>assigned[i]);if(a&&b)notes.push(observe(a,b));}t.forEach(pairs)}pairs(trees[shape]);
@@ -98,13 +132,13 @@ if(typeof document!=='undefined')(()=>{
     if(strength)feedback.append(make('p',strength));
     if(tradeoff)feedback.append(make('p',tradeoff));
     const more=make('details');more.append(make('summary','More evidence and comparisons'));notes.forEach(n=>more.append(make('p',n)));feedback.append(more);
-    nearby.style.setProperty('--cam-feedback-offset',`${lastTip===null?0:Math.min(lastTip*36,140)}px`);
   }
   function place(i,id=selected){
     if(!id&&assigned[i]){selectTaxon(assigned[i]);return}
     if(!data[id]){feedback.textContent='Select a taxon first, then choose a tip.';return}
     const displaced=assigned[i];assigned=assigned.map(x=>x===id?null:x);assigned[i]=id;inspected=id;selected=null;lastTip=i;render();observations();canvas.querySelectorAll('.cam-tip-target')[i].focus();document.getElementById('cam-selection-status').textContent=`Taxon ${id} placed at tip ${i+1}. See the placement commentary beside the tree.`;
     if(displaced&&displaced!==id)feedback.prepend(make('p',`Taxon ${displaced} returned to the bank because that tip was occupied.`));
+    heading.textContent=`Taxon ${id} · tip ${i+1} feedback`;openFeedback(canvas.querySelectorAll('.cam-tip-target')[i]);
   }
   function render(){
     bank.replaceChildren();Object.keys(data).filter(id=>!assigned.includes(id)).forEach(id=>bank.append(token(id)));
@@ -119,7 +153,11 @@ if(typeof document!=='undefined')(()=>{
   }
   function returnTaxon(id=selected){if(!data[id]){feedback.textContent='Select a taxon to return to the bank.';return}assigned=assigned.map(x=>x===id?null:x);selected=null;render();observations()}
   document.getElementById('cam-return').addEventListener('click',()=>{lastTip=null;returnTaxon()});
-  document.getElementById('cam-shape').addEventListener('click',()=>{shape=(shape+1)%trees.length;render();observations()});
-  document.getElementById('cam-reset').addEventListener('click',()=>{assigned=Array(6).fill(null);selected=null;inspected=null;lastTip=null;shape=0;render();observations();document.getElementById('cam-selection-status').textContent='Click a taxon, then click a tip space.'});
+  document.getElementById('cam-shape').addEventListener('click',()=>{
+    const previous=shape;shape=(shape+1)%trees.length;render();
+    heading.textContent='Branching pattern comparison';feedback.replaceChildren(...patternChange(previous,shape,assigned).map(n=>make('p',n)));
+    openFeedback(document.getElementById('cam-shape'));
+  });
+  document.getElementById('cam-reset').addEventListener('click',()=>{closeFeedback();assigned=Array(6).fill(null);selected=null;inspected=null;lastTip=null;shape=0;render();observations();heading.textContent='Placement feedback';document.getElementById('cam-selection-status').textContent='Click a taxon, then click a tip space.'});
   root.hidden=false;render();observations();
 })();

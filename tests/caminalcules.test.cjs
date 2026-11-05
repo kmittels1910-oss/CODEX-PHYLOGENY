@@ -1,6 +1,6 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
-const {data,trees,score,observe,placement}=require('../caminalcules.js');
+const {data,trees,score,observe,placement,patternChange}=require('../caminalcules.js');
 test('every scaffold is binary and includes each of six tips once',()=>{
   for(const tree of trees){const tips=[];function visit(t){if(typeof t==='number'){tips.push(t);return}assert.equal(t.length,2);t.forEach(visit)}visit(tree);assert.deepEqual(tips.sort(),[0,1,2,3,4,5]);assert.equal(tree[0],0)}
 });
@@ -43,4 +43,14 @@ test('Caminalcule interaction is click-to-place with persistent details and rese
   assert.doesNotMatch(js,/addEventListener\(['"](?:dragstart|dragend|drop|dragover)/);
   assert.match(html,/id="cam-selected-detail"/);assert.match(html,/id="cam-selection-status"/);
   assert.match(html,/oyc.yale.edu/);assert.match(html,/ableweb.org/);assert.match(js,/x:340/);
+});
+test('branch-pattern changes identify gained and removed clades with incomplete tips',()=>{
+  const notes=patternChange(0,1,['A','I','G',null,null,null]).join(' ');
+  assert.match(notes,/New clade.*taxon I \+ taxon G \+ unassigned tip 4/);
+  assert.match(notes,/No longer a clade/);assert.match(notes,/Some tips are unassigned/);
+  assert.match(notes,/Tip 1 remains the outgroup/);assert.match(notes,/Taxa stay at the same numbered tips/);
+});
+test('branch-pattern feedback compares exact previous and current parsimony totals',()=>{
+  const assigned=['A','I','G','F','E','D'];
+  for(let before=0;before<3;before++){const after=(before+1)%3;const notes=patternChange(before,after,assigned).join(' ');assert.ok(notes.includes(`${score(trees[before],assigned)} → ${score(trees[after],assigned)}`));assert.match(notes,/not all possible trees/)}
 });
