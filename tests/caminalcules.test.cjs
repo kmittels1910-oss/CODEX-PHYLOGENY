@@ -42,5 +42,5 @@ test('Caminalcule interaction is click-to-place with persistent details and rese
   const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
   assert.doesNotMatch(js,/addEventListener\(['"](?:dragstart|dragend|drop|dragover)/);
   assert.match(html,/id="cam-selected-detail"/);assert.match(html,/id="cam-selection-status"/);
-  assert.match(html,/oyc.yale.edu/);assert.match(html,/ableweb.org/);assert.match(js,/x:230/);
+  assert.match(html,/oyc.yale.edu/);assert.match(html,/ableweb.org/);assert.match(js,/x:340/);
 });

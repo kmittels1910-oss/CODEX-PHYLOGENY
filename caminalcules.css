@@ -1,5 +1,9 @@
-.cam-workspace{display:grid;grid-template-columns:190px minmax(0,1fr);gap:1rem;align-items:start}
-.cam-bank{display:flex;flex-direction:column;gap:.4rem;min-height:100px;border:2px dashed #81998a;padding:.5rem;border-radius:8px}
+.cam-workspace{display:grid;grid-template-columns:minmax(280px,.85fr) minmax(0,1fr);gap:1rem;align-items:start;max-width:1000px}
+.cam-bank{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem;min-height:100px;border:2px dashed #81998a;padding:.65rem;border-radius:8px}
+.cam-bank>p{grid-column:1/-1}
+.cam-bank .taxon-token{flex-direction:column;justify-content:center;text-align:center;min-height:160px;padding:.5rem;font-size:.95rem}
+.cam-bank .taxon-token img{width:100%;height:125px;max-width:145px}
+.cam-bank .taxon-card:nth-child(even) .taxon-description{left:auto;right:0}
 .taxon-card{position:relative;min-width:0}
 .taxon-token{display:flex;align-items:center;gap:.5rem;width:100%;padding:.3rem;background:white;color:#183b35;border:1px solid #81998a;font-size:.85rem;line-height:1.2;text-align:left;cursor:pointer}
 .taxon-token img{width:42px;height:50px;object-fit:contain;background:white}
@@ -9,14 +13,14 @@
 .taxon-card:hover>.taxon-description,.taxon-card:focus-within>.taxon-description{display:block}
 .taxon-card.dismissed>.taxon-description{display:none}
 .cam-tree-area{min-width:0}
-.cam-canvas{position:relative;aspect-ratio:800/450;background:white;border:1px solid var(--line);border-radius:8px}
+.cam-canvas{position:relative;aspect-ratio:1;min-height:540px;max-width:540px;background:white;border:1px solid var(--line);border-radius:8px}
 .lab-page .cam-canvas svg{display:block;position:absolute;inset:0;width:100%;height:100%;max-height:none}
 .cam-branch{stroke:#264b3d;stroke-width:3;fill:none}
-.cam-tip{position:absolute;left:1%;right:71.25%;display:flex;align-items:center;gap:.3rem;transform:translateY(-50%);min-height:44px}
+.cam-tip{position:absolute;left:1%;right:57.5%;display:flex;align-items:center;gap:.3rem;transform:translateY(-50%);min-height:72px}
 .cam-tip-target{font-size:.75rem;padding:.3rem;min-width:44px;flex:none}
 .cam-tip .taxon-card{flex:1}
-.cam-tip .taxon-token{font-size:.75rem;padding:.15rem;gap:.15rem}
-.cam-tip .taxon-token img{width:26px;height:36px}
+.cam-tip .taxon-token{font-size:.8rem;padding:.2rem;gap:.3rem;min-height:72px}
+.cam-tip .taxon-token img{width:60px;height:66px}
 .cam-tip .taxon-description{left:0;right:auto}
 .cam-empty{font-size:.8rem;color:#526b60}
 .cam-bank-actions button{font-size:.8rem;padding:.4rem;width:100%;margin:.4rem 0}
@@ -26,6 +30,9 @@
 .cam-shape-controls button{padding:.4rem;font-size:.8rem}
 .cam-selected-detail{background:#edf3e9;border:1px solid #a5b8aa;border-radius:8px;padding:.7rem 1rem;margin-top:1rem}
 .cam-selected-detail h3{margin:0 0 .4rem;font-size:1rem}
+.cam-detail-specimen{float:left;width:150px;height:150px;object-fit:contain;background:white;margin:0 1rem .5rem 0;border-radius:6px}
+.cam-selected-detail::after{content:"";display:block;clear:both}
 .cam-feedback-heading{font-size:1rem;margin:1rem 0 0}
-@media(max-width:650px){.cam-workspace{grid-template-columns:120px minmax(0,1fr);gap:.5rem}.taxon-token{flex-direction:column;font-size:.8rem}.taxon-token img{height:40px}.cam-canvas{min-height:440px}.cam-canvas svg{height:440px!important}.cam-tip{left:1%;right:65%;flex-direction:column;gap:0}.cam-tip .taxon-token{flex-direction:row}.cam-tip .taxon-token img{display:none}.cam-tip .taxon-description{width:220px}.cam-tip-target{min-height:44px}}
+@media(max-width:800px){.cam-workspace{grid-template-columns:minmax(0,1fr)}.cam-bank{grid-template-columns:repeat(3,minmax(0,1fr))}.cam-bank .taxon-token{min-height:140px}.cam-bank .taxon-token img{height:105px}.cam-tree-area{width:100%;max-width:540px;margin:auto}.cam-bank-actions{display:flex;gap:.5rem}.cam-canvas{width:100%}}
+@media(max-width:420px){.cam-bank{grid-template-columns:repeat(2,minmax(0,1fr))}.cam-tip{right:48%}.cam-tip .taxon-token img{width:48px;height:60px}.cam-tip .taxon-token{font-size:.75rem}.cam-tip-target{min-height:44px}.cam-detail-specimen{width:110px;height:125px}.cam-tip .taxon-description{width:220px}}
 @media print{.taxon-description{display:none!important}.cam-shape-controls,.cam-bank-actions{display:none}.cam-workspace{grid-template-columns:160px 1fr}}
