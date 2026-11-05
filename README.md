@@ -4,6 +4,7 @@ An accessible, buildless HTML adaptation of the supplied Lab 5 worksheet and pre
 
 ## Student experience
 
+- The Caminalcules tab includes a vertical taxon bank, hover/focus descriptions (Escape dismisses), click/tap or drag-to-tip assignment, three alternative branching scaffolds, and text tree descriptions. Feedback discusses provisional shared features, differences, rooting, and illustrative minimum-change comparisons without grading an arrangement. It uses five explicitly disclosed binary observations and does not replace a student's own matrix. Written responses remain external; placements are temporary. Include `caminalcules.js` and `caminalcules.css` when publishing.
 - Navigation below the banner becomes an accessible tab strip with one section visible at a time. Longer sections use Previous/Next pages to keep related content in manageable screen-sized groups. Left/Right arrows, Home, and End navigate tabs. Deep links such as `#read/2` open a specific page. Without JavaScript, all content remains available as a continuous document. Print includes all panels.
 - Include `tabs.js` and `tabs.css` with the other assets when publishing. Expanded explanations, small screens, or zoom may require vertical scrolling; no fixed-height content clipping is used.
 - Four lab parts with vocabulary, tree interpretation prompts, reference matrix layouts, NOVA instructions, source Caminalcule images and descriptions, external tree-construction instructions, and taxonomy practice.
