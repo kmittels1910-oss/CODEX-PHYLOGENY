@@ -17,7 +17,8 @@
 .taxon-token img{width:42px;height:50px;object-fit:contain;background:white}
 .taxon-token:hover{background:#eef4ec;color:#183b35}
 .taxon-token[aria-pressed=true]{outline:3px solid #974700;outline-offset:2px;background:#f8edd0}
-.taxon-description{display:none;position:absolute;left:0;top:100%;z-index:20;width:min(290px,75vw);padding:.8rem;background:#173d33;color:white;border:2px solid #ebd699;border-radius:6px;font-size:.9rem;line-height:1.5;box-shadow:0 4px 12px #0003;text-align:left}
+.taxon-description{display:none;position:absolute;left:0;bottom:100%;top:auto;z-index:20;width:min(290px,75vw);padding:.8rem;background:#173d33;color:white;border:2px solid #ebd699;border-radius:6px;font-size:.9rem;line-height:1.5;box-shadow:0 4px 12px #0003;text-align:left}
+.taxon-card:hover,.taxon-card:focus-within{z-index:30}
 .taxon-card:hover>.taxon-description,.taxon-card:focus-within>.taxon-description{display:block}
 .taxon-card.dismissed>.taxon-description{display:none}
 .cam-tree-area{min-width:0}

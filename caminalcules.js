@@ -82,7 +82,22 @@ if(typeof document!=='undefined')(()=>{
   const heading=root.querySelector('.cam-feedback-heading');heading.id='cam-popup-title';nearby.append(heading,feedback);stage.append(nearby);
   const nativePopover=typeof nearby.showPopover==='function';if(!nativePopover)nearby.hidden=true;
   const close=document.createElement('button');close.type='button';close.className='cam-popup-close';close.textContent='Close feedback';nearby.prepend(close);
-  const reopen=document.createElement('button');reopen.type='button';reopen.textContent='Show feedback';reopen.className='secondary';document.getElementById('cam-shape').after(reopen);
+  const reopen=document.createElement('button');reopen.type='button';reopen.textContent='Feedback';reopen.className='secondary';document.getElementById('cam-shape').after(reopen);
+  const feedbackHistory=[];
+  function recordFeedback(title){
+    closeFeedback();heading.textContent=title;
+    feedbackHistory.unshift({title,nodes:[...feedback.children].map(n=>n.cloneNode(true))});
+    if(feedbackHistory.length>50)feedbackHistory.pop();
+    reopen.textContent=`Feedback (${feedbackHistory.length})`;
+  }
+  function showTrackedFeedback(){
+    if(feedbackHistory.length){
+      const latest=feedbackHistory[0];heading.textContent=latest.title;feedback.replaceChildren(...latest.nodes.map(n=>n.cloneNode(true)));
+      if(feedbackHistory.length>1){const history=document.createElement('details'),summary=document.createElement('summary');summary.textContent=`Earlier feedback (${feedbackHistory.length-1})`;history.append(summary);
+        feedbackHistory.slice(1).forEach(entry=>{const details=document.createElement('details'),label=document.createElement('summary');label.textContent=entry.title;details.append(label,...entry.nodes.map(n=>n.cloneNode(true)));history.append(details)});feedback.append(history)}
+    }
+    openFeedback(reopen);
+  }
   let popupOpener=null;
   function closeFeedback(restore=false){if(nativePopover){if(nearby.matches(':popover-open'))nearby.hidePopover()}else nearby.hidden=true;if(restore&&popupOpener?.isConnected)popupOpener.focus()}
   function openFeedback(anchor){
@@ -93,7 +108,7 @@ if(typeof document!=='undefined')(()=>{
     if(nativePopover){if(!nearby.matches(':popover-open'))nearby.showPopover()}else nearby.hidden=false;
     close.focus({preventScroll:true});
   }
-  close.addEventListener('click',()=>closeFeedback(true));reopen.addEventListener('click',()=>openFeedback(reopen));
+  close.addEventListener('click',()=>closeFeedback(true));reopen.addEventListener('click',showTrackedFeedback);
   document.addEventListener('pointerdown',e=>{if(!nativePopover&&!nearby.hidden&&!nearby.contains(e.target)&&!reopen.contains(e.target))closeFeedback()});
   nearby.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();closeFeedback(true)}});
   window.addEventListener('resize',()=>closeFeedback());
@@ -136,9 +151,9 @@ if(typeof document!=='undefined')(()=>{
   function place(i,id=selected){
     if(!id&&assigned[i]){selectTaxon(assigned[i]);return}
     if(!data[id]){feedback.textContent='Select a taxon first, then choose a tip.';return}
-    const displaced=assigned[i];assigned=assigned.map(x=>x===id?null:x);assigned[i]=id;inspected=id;selected=null;lastTip=i;render();observations();canvas.querySelectorAll('.cam-tip-target')[i].focus();document.getElementById('cam-selection-status').textContent=`Taxon ${id} placed at tip ${i+1}. See the placement commentary beside the tree.`;
+    const displaced=assigned[i];assigned=assigned.map(x=>x===id?null:x);assigned[i]=id;inspected=id;selected=null;lastTip=i;render();observations();canvas.querySelectorAll('.cam-tip-target')[i].focus();document.getElementById('cam-selection-status').textContent=`Taxon ${id} placed at tip ${i+1}. Press Feedback to review this placement.`;
     if(displaced&&displaced!==id)feedback.prepend(make('p',`Taxon ${displaced} returned to the bank because that tip was occupied.`));
-    heading.textContent=`Taxon ${id} · tip ${i+1} feedback`;openFeedback(canvas.querySelectorAll('.cam-tip-target')[i]);
+    recordFeedback(`Taxon ${id} · tip ${i+1} feedback`);
   }
   function render(){
     bank.replaceChildren();Object.keys(data).filter(id=>!assigned.includes(id)).forEach(id=>bank.append(token(id)));
@@ -156,8 +171,8 @@ if(typeof document!=='undefined')(()=>{
   document.getElementById('cam-shape').addEventListener('click',()=>{
     const previous=shape;shape=(shape+1)%trees.length;render();
     heading.textContent='Branching pattern comparison';feedback.replaceChildren(...patternChange(previous,shape,assigned).map(n=>make('p',n)));
-    openFeedback(document.getElementById('cam-shape'));
+    recordFeedback(`Pattern change: ${labels[previous]} → ${labels[shape]}`);
   });
-  document.getElementById('cam-reset').addEventListener('click',()=>{closeFeedback();assigned=Array(6).fill(null);selected=null;inspected=null;lastTip=null;shape=0;render();observations();heading.textContent='Placement feedback';document.getElementById('cam-selection-status').textContent='Click a taxon, then click a tip space.'});
+  document.getElementById('cam-reset').addEventListener('click',()=>{closeFeedback();feedbackHistory.length=0;reopen.textContent='Feedback';assigned=Array(6).fill(null);selected=null;inspected=null;lastTip=null;shape=0;render();observations();heading.textContent='Placement feedback';document.getElementById('cam-selection-status').textContent='Click a taxon, then click a tip space.'});
   root.hidden=false;render();observations();
 })();
