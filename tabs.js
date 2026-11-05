@@ -6,7 +6,7 @@
   const tabs=[...nav.querySelectorAll('a')];
   const sections=tabs.map(tab=>document.getElementById(tab.getAttribute('href').slice(1)));
   const pages=new Map(),current=new Map();
-  const pageNames={start:['Guide','Concepts'],read:['Tree','Practice 1','Practice 2','Practice 3','Matrix','Explain'],practice:['NOVA'],build:['Explore','Define traits','Matrix','TA check-in','Record tree','Test hypothesis'],groups:['Groups','Practice 1','Practice 2','Practice 3','Apply'],exit:['Tree','Questions 1–5','Questions 6–10'],submit:['Submit']};
+  const pageNames={start:['Guide','Concepts'],read:['Tree','Practice 1','Practice 2','Practice 3','Matrix','Explain'],practice:['NOVA'],build:['Explore','Define traits','Matrix','TA check-in','Record tree','Test hypothesis'],groups:['Groups','Practice 1','Practice 2','Practice 3','Apply'],exit:['Questions 1–5','Questions 6–10'],submit:['Submit']};
   const make=(tag,cls)=>{const e=document.createElement(tag);if(cls)e.className=cls;return e};
   // Keep each meaningful task together; split question sets into small batches.
   sections.forEach(section=>{
@@ -27,6 +27,22 @@
       }
       chunk.push(node);
     });flush();
+    if(section.id==='exit'){
+      const reference=chunks[0],questionChunks=chunks.slice(1);
+      const combined=questionChunks.map((questions,i)=>{
+        const layout=make('div','exit-layout'),chart=make('div','exit-chart'),prompts=make('div','exit-questions');
+        reference.forEach(node=>{
+          if(node.matches('h2'))return;
+          const clone=node.cloneNode(true),ids=new Map();
+          clone.querySelectorAll('[id]').forEach(e=>{const old=e.id;e.id=`${old}-copy-${i+1}`;ids.set(old,e.id)});
+          clone.querySelectorAll('[aria-labelledby],[aria-describedby]').forEach(e=>['aria-labelledby','aria-describedby'].forEach(attr=>{if(e.hasAttribute(attr))e.setAttribute(attr,e.getAttribute(attr).split(' ').map(id=>ids.get(id)||id).join(' '))}));
+          if(node.matches('figure,details'))chart.append(clone);else prompts.append(clone);
+        });
+        const heading=make('h3');heading.textContent=pageNames.exit[i];prompts.prepend(heading);
+        questions.forEach(q=>prompts.append(q));layout.append(chart,prompts);return [layout];
+      });
+      chunks.splice(0,chunks.length,...combined);
+    }
     const title=section.querySelector('h2').textContent;
     section.replaceChildren();const panelPages=[];
     chunks.forEach((nodes,i)=>{

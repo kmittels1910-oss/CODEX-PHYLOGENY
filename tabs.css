@@ -20,4 +20,13 @@
 .tabbed-lab footer{padding:1rem max(5vw,1.2rem)}
 .tabbed-lab footer p:not(:first-child){font-size:.75rem}
 .lab-page .practice-tree svg{max-height:none}
+.tabbed-lab main:has(> #exit:not([hidden])){max-width:1360px}
+.exit-layout{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:1.5rem;align-items:start}
+.exit-layout .exit-chart figure{margin-top:0}
+.exit-layout .exit-chart svg{max-height:400px}
+.exit-questions h3{margin:.25rem 0 .65rem;font-size:1.1rem}
+.exit-questions ol{padding-left:1.5rem;margin-top:.5rem}
+.exit-questions li{padding-left:.25rem;margin-bottom:.8rem}
+.exit-questions>p{font-size:.9rem}
+@media(max-width:760px){.exit-layout{grid-template-columns:minmax(0,1fr);gap:.5rem}}
 @media print{.page-controls{display:none}.lab-page{break-before:page}.tabbed-lab section{padding:1rem 0}}
