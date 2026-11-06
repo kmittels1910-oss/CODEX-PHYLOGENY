@@ -103,6 +103,13 @@ th { background: #eaf3e7; }
 #incident-decision legend { font-weight: 700; }
 #incident-decision label { padding: .5rem 0; font-weight: 500; }
 #incident-decision input[type="radio"] { width: auto; accent-color: var(--green); }
+
+.comparison-pots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+.comparison-pots figure { background: #fff; border: 1px solid var(--line); border-radius: .55rem; padding: .55rem .35rem; }
+.comparison-pots .plant { height: auto; max-height: 13rem; }
+.incident h4 { margin: 1.2rem 0 .45rem; }
+.incident .table-scroll { max-height: none; }
+.incident th, .incident td { overflow-wrap: anywhere; }
 </style>
 </head>
 <body>
@@ -492,7 +499,7 @@ function renderWeeks() {
     const button = document.createElement("button");
     const status = finished.has(index) ? "Completed" : week === index ? "Current" :
       index > unlocked ? "Locked" : "Not started";
-    button.innerHTML = "Week " + (index + 1) + " Â· Day " + days[index + 1] + "<small>" + status + "</small>";
+    button.innerHTML = "Week " + (index + 1) + " - Day " + days[index + 1] + "<small>" + status + "</small>";
     button.disabled = index > unlocked;
     if (week === index) button.setAttribute("aria-current", "step");
     button.addEventListener("click", () => openWeek(index));
@@ -509,7 +516,7 @@ function panel(label, heading, instruction, content) {
 const action = (id, label) => '<button type="button" id="' + id + '">' + label + '</button>';
 const list = (items, tag = "ul") => "<" + tag + ">" + items.map(item => "<li>" + item + "</li>").join("") + "</" + tag + ">";
 const listen = (id, callback) => document.getElementById(id).addEventListener("click", callback);
-const weekLabel = () => "Week " + (week + 1) + " Â· Day " + days[week + 1];
+const weekLabel = () => "Week " + (week + 1) + " - Day " + days[week + 1];
 
 function render() {
   renderWeeks();
@@ -556,14 +563,14 @@ function renderDesign() {
     "<details><summary>What if we used only one plant?</summary><p>Imagine the one plant in a treatment develops a damaged growing tip. Its short height could reflect the damage. Multiple pots help you separate a treatment pattern from the peculiarities of one pot or plant.</p></details>" +
     action("bench", "Explore the greenhouse bench"));
   Object.entries(resources).forEach(([name, description], index) =>
-    listen("resource-" + index, () => document.querySelector("#resource").textContent = name + " â€” " + description));
+    listen("resource-" + index, () => document.querySelector("#resource").textContent = name + " - " + description));
   listen("bench", () => show("bench"));
 }
 
 function benchMarkup(pots, interactive = false) {
-  return '<p class="light">Less light <span aria-hidden="true">â†’</span> More light</p><div class="bench">' +
-    pots.map(pot => interactive ? action("pot-" + pot.id, pot.id + " Â· " + pot.treatment.name) :
-      "<span>" + pot.id + " Â· " + pot.treatment.name + "</span>").join("") + "</div>";
+  return '<p class="light">Less light <span aria-hidden="true">to</span> More light</p><div class="bench">' +
+    pots.map(pot => interactive ? action("pot-" + pot.id, pot.id + " - " + pot.treatment.name) :
+      "<span>" + pot.id + " - " + pot.treatment.name + "</span>").join("") + "</div>";
 }
 
 function renderBench() {
@@ -608,7 +615,7 @@ function potDrawing(plants, index, target = null, marker = 0) {
   const foliage = plants.map((plant, slot) => {
     const x = positions[slot];
     const height = plant.heights[index];
-    if (height === null) return '<text x="' + x + '" y="132" text-anchor="middle">Ã—</text>';
+    if (height === null) return '<text x="' + x + '" y="132" text-anchor="middle">X</text>';
     const shoot = height * scaleFactor;
     const width = Math.max(9, Math.min(24, shoot * shootRatios[index]));
     const pale = index >= 2 && plant.anomaly === "pale" ? ' style="filter:saturate(.48)"' : "";
@@ -644,36 +651,73 @@ function potDrawing(plants, index, target = null, marker = 0) {
 
 function plantDescription(plant, index) {
   const height = plant.heights[index];
-  if (height === null) return " Â· no measurement";
+  if (height === null) return " - no measurement";
   const lower = Math.floor(height / 10) * 10;
-  const appearance = index >= 2 && plant.anomaly === "pale" ? " Â· pale leaves" :
-    index >= 2 && plant.anomaly === "leaning" ? " Â· leaning stem" : "";
-  return '<span class="sr-only"> Â· about ' + lower + " to " + (lower + 10) + " mm" + appearance + "</span>";
+  const appearance = index >= 2 && plant.anomaly === "pale" ? " - pale leaves" :
+    index >= 2 && plant.anomaly === "leaning" ? " - leaning stem" : "";
+  return '<span class="sr-only"> - about ' + lower + " to " + (lower + 10) + " mm" + appearance + "</span>";
+}
+
+function plantsIn(pot) {
+  return experiment.plants.filter(plant => plant.pot === pot);
+}
+
+function potComparison(index) {
+  const { suspect, comparison } = experiment.incident;
+  const day = days[index];
+  const earlier = days[index - 1];
+  const mean = (plants, sample) => plants.reduce((sum, plant) => sum + plant.heights[sample], 0) / plants.length;
+  const formatted = value => Number(value.toFixed(1)) + " mm";
+  const rows = [suspect, comparison].map(pot => {
+    const plants = plantsIn(pot);
+    const before = mean(plants, index - 1);
+    const after = mean(plants, index);
+    return [pot.id, formatted(before), formatted(after), formatted(after - before)];
+  });
+  const pots = [suspect, comparison].map((pot, position) =>
+    '<figure class="pot-observation"><figcaption><strong>Pot ' + pot.id + '</strong><br>' +
+    (position === 0 ? "Reported pot" : "Comparison pot") + '</figcaption>' + potDrawing(plantsIn(pot), index) + '</figure>').join("");
+  return '<p><strong>Same fertilizer:</strong> Both pots received ' + suspect.treatment.name +
+    ' (' + suspect.treatment.concentration + ' g/L). The pots are drawn at the same scale.</p>' +
+    '<div class="comparison-pots">' + pots + '</div>' +
+    tableMarkup([["Pot", "Day " + earlier + " height", "Day " + day + " height", "Growth since Day " + earlier], ...rows],
+      "Average shoot height across the four plants in each pot") +
+    '<p>Use the growth column to compare how much each pot changed. One pot can grow less over the week even if some of its plants are still taller.</p>';
+}
+
+function inspectionEvidence() {
+  const { suspect, comparison, wickFailure } = experiment.incident;
+  const result = wickFailure
+    ? "The reservoir has water, but the wick in pot " + suspect.id + " is above it. The dry medium is evidence that water was not reaching the roots normally."
+    : "Both wick ends are in water and both pots are moist. This check found no watering fault. Plants can grow at different rates under the same treatment, but this check does not establish why the reported pot grew differently.";
+  return '<h4>Check 2. Inspect how water gets to each pot</h4>' +
+    '<p>The wick draws water from the reservoir into the growing medium. On Day 7 both wicks touched the water and both pots were moist.</p>' +
+    tableMarkup([["Day 14 check", "Pot " + suspect.id, "Pot " + comparison.id],
+      ["Water in reservoir", "Yes", "Yes"],
+      ["Wick end touching water", wickFailure ? "No" : "Yes", "Yes"],
+      ["Growing medium near wick", wickFailure ? "Dry" : "Moist", "Moist"]], "Watering log") +
+    '<p><strong>What the check tells you:</strong> ' + result + '</p>';
 }
 
 function renderObservation() {
   const index = week + 1;
   const day = days[index];
   const pot = selectedPot || experiment.bench[0];
-  const plants = experiment.plants.filter(plant => plant.pot === pot);
-  const { suspect, comparison, moisture, wick, action: chosen, day21 } = experiment.incident;
+  const plants = plantsIn(pot);
+  const { suspect, action: chosen, day21 } = experiment.incident;
   const inspection = week === 1
-    ? '<section class="incident"><h3>Day 14 bench report</h3><p>The technician noticed slower growth in pot <strong>' +
-      suspect.id + '</strong>. Compare it with <strong>' + comparison.id + '</strong>, a pot at the same fertilizer concentration.</p>' +
-      '<div class="actions">' + action("inspect-suspect", "Inspect " + suspect.id) + action("inspect-comparison", "Inspect " + comparison.id) + '</div>' +
-      '<details><summary>Check the watering log and wick</summary><dl><dt>Day 7 check</dt><dd>Both wicks were submerged and both media were moist.</dd>' +
-      '<dt>Day 14 Â· ' + suspect.id + '</dt><dd>' + wick + '. ' + moisture + '. Water remains in the reservoir.</dd>' +
-      '<dt>Day 14 Â· ' + comparison.id + '</dt><dd>Wick end submerged. Medium moist at the wick. Water remains in the reservoir.</dd></dl></details></section>'
-    : week === 2 ? '<section class="incident"><h3>Day 21 follow-up</h3><p>Pot <strong>' + suspect.id +
-      '</strong> Â· Day 14 decision: ' + actionNames[chosen] + '.</p><p>' + day21 + '</p><p>Compare the new growth with pot ' +
-      comparison.id + ', which received the same fertilizer concentration.</p></section>' : "";
+    ? '<section class="incident"><h3>Day 14: Investigate the reported pot</h3>' +
+      '<h4>Check 1. Compare growth from Day 7 to Day 14</h4>' + potComparison(index) + inspectionEvidence() + '</section>'
+    : week === 2 ? '<section class="incident"><h3>Day 21: See what happened after your decision</h3>' +
+      '<p><strong>Day 14 action for pot ' + suspect.id + ':</strong> ' + actionNames[chosen] + '.</p><p>' + day21 + '</p>' +
+      potComparison(index) + '</section>' : "";
   panel(weekLabel(), themes[week],
     (week === 0 ? "Seven days have passed. Inspect a few pots before measuring." : week === 1 ?
-      "Inspect the reported pot and a pot at the same fertilizer concentration. Check the roots and watering log. Record two observations and a possible explanation in your lab document." :
-      "Revisit the reported pot and its comparison. Use the ruler and Excel data to compare their Day 14 to Day 21 growth."),
-    inspection + benchMarkup(experiment.bench, true) +
-    '<div id="pot-view"><h3>Pot ' + pot.id + ' Â· Day ' + day + '</h3><figure class="pot-observation">' +
-    potDrawing(plants, index) + "<figcaption>" + plants.map(plant => plant.id + plantDescription(plant, index)).join(" Â· ") +
+      "Compare the two pots below. First look at how much each grew. Then use the watering log to decide whether you found a watering problem." :
+      "Read the follow-up on your Week 2 decision. Compare how much the two pots grew from Day 14 to Day 21, then verify a plant from each with the ruler."),
+    inspection + (week > 0 ? action("measure-pair", "Use the ruler on the two pots") + "<h3>Explore the rest of the bench</h3>" : "") + benchMarkup(experiment.bench, true) +
+    '<div id="pot-view"><h3>Pot ' + pot.id + ' - Day ' + day + '</h3><figure class="pot-observation">' +
+    potDrawing(plants, index) + "<figcaption>" + plants.map(plant => plant.id + plantDescription(plant, index)).join(" - ") +
     "</figcaption></figure></div>" +
     action("measure", "Measure four plants"));
   experiment.bench.forEach(candidate => {
@@ -685,26 +729,17 @@ function renderObservation() {
       document.getElementById("pot-" + candidate.id).focus();
     });
   });
-  if (week === 1) {
-    for (const [id, inspected] of [["inspect-suspect", suspect], ["inspect-comparison", comparison]]) {
-      listen(id, () => {
-        selectedPot = inspected;
-        renderObservation();
-        const view = document.querySelector("#pot-view");
-        view.tabIndex = -1;
-        view.focus();
-      });
-    }
-  }
+  if (week > 0) listen("measure-pair", () => beginMeasurements(index));
   listen("measure", () => beginMeasurements(index));
 }
 
 function renderDecision() {
-  const { suspect, comparison, moisture, wick } = experiment.incident;
+  const { suspect, wickFailure } = experiment.incident;
   panel(weekLabel(), "Decide what to do before Day 21",
-    "In your lab document, record the evidence for your diagnosis, an alternative explanation, and a prediction for Day 21. Then record one action below.",
-    "<p>Pot <strong>" + suspect.id + "</strong> had slower growth. Your same-treatment comparison is <strong>" +
-    comparison.id + "</strong>.</p><p><strong>Day 14 inspection:</strong> " + wick + ". " + moisture + ".</p>" +
+    "Record your evidence and your Day 21 prediction in your lab document. Then choose how to handle the reported pot.",
+    '<p><strong>Day 14 finding for pot ' + suspect.id + ':</strong> ' + (wickFailure
+      ? "The wick was above the water and the growing medium was dry. You found a watering fault."
+      : "The wick was in the water and the growing medium was moist. You found no watering fault. The cause of any growth difference is still uncertain.") + '</p>' +
     '<form id="incident-decision"><fieldset><legend>Choose one action for pot ' + suspect.id + '</legend>' +
     '<label><input type="radio" name="intervention" value="R" required> Service the wick. Reseat it in the reservoir and keep the fertilizer concentration the same.</label>' +
     '<label><input type="radio" name="intervention" value="M"> Leave the setup as is and monitor. Keep the pot in place and check it again on Day 21.</label>' +
@@ -741,12 +776,12 @@ function beginMeasurements(index) {
 function renderMeasurement() {
   const sample = practicePlants(experiment, dayIndex);
   const plant = sample[specimen];
-  const potPlants = experiment.plants.filter(candidate => candidate.pot === plant.pot);
+  const potPlants = plantsIn(plant.pot);
   const estimate = measurement ?? 0;
-  panel("Day " + days[dayIndex] + " Â· Measurement practice", "Measure " + plant.id,
+  panel("Day " + days[dayIndex] + " - Measurement practice", "Measure " + plant.id,
     "Find the plant marked by the arrow. Use the slider or arrow keys to align the ruler marker with the highest point of that plant. Start at the soil line.",
     '<div class="measure-layout"><div id="drawing">' + potDrawing(potPlants, dayIndex, plant, estimate) + '</div><div>' +
-    '<p>Pot ' + plant.pot.id + ' Â· ' + plant.pot.treatment.name + ' Â· Measure plant ' + (potPlants.indexOf(plant) + 1) + '</p><p>Practice measurement ' + (specimen + 1) + ' of 4</p>' + accessibleRuler(plant.heights[dayIndex]) +
+    '<p>Pot ' + plant.pot.id + ' - ' + plant.pot.treatment.name + ' - Measure plant ' + (potPlants.indexOf(plant) + 1) + '</p><p>Practice measurement ' + (specimen + 1) + ' of 4</p>' + accessibleRuler(plant.heights[dayIndex]) +
     '<label for="ruler">Ruler marker (mm)</label><input type="range" min="0" max="200" value="' + estimate +
     '" id="ruler"><output id="estimate" for="ruler">' + estimate + ' mm</output><div class="actions">' +
     action("compare", "Compare with team measurement") + '</div><p id="measurement-feedback" role="status"></p>' +
@@ -795,18 +830,18 @@ function renderData() {
   const index = revealed.has(week + 1) ? week + 1 : 0;
   const day = days[index];
   const groups = heightGroups(experiment);
-  const headings = treatments.map(treatment => treatment.name + " Â· " + treatment.concentration + " g/L");
+  const headings = treatments.map(treatment => treatment.name + " - " + treatment.concentration + " g/L");
   const groupedTables = days.slice(0, index + 1).map((sampleDay, time) =>
-    tableMarkup([["Potâ€“plant", ...headings], ...groups.map(({ replicate, plants }) =>
+    tableMarkup([["Pot-plant", ...headings], ...groups.map(({ replicate, plants }) =>
       [replicate, ...plants.map(plant => plant.heights[time] ?? "")])],
-      "Day " + sampleDay + " Â· Height (mm)")).join("");
+      "Day " + sampleDay + " - Height (mm)")).join("");
   const checkpoint = index === 0 ?
     "<p>Save the Day 0 workbook or paste the heights into Raw Data starting at B3. In your lab document, explain what makes plant height hard to measure consistently.</p>" :
     "<h3>In your Excel workbook</h3>" + list([
-      "Match Plant IDs and " + (week === 0 ? "enter Day 0 and Day 7" : "add Day " + day) + " heights. If you already entered formulas, paste the current dayâ€™s heights into your existing workbook to keep that work.",
+      "Match Plant IDs and " + (week === 0 ? "enter Day 0 and Day 7" : "add Day " + day) + " heights. If you already entered formulas, paste the current day's heights into your existing workbook to keep that work.",
       "For each treatment, find the Day " + day + " mean, sample variance and sample standard deviation. First average the available plants within each pot, then summarize the four pot averages. The pot is the replicate because fertilizer was applied to the whole pot.",
       "Run two-tailed Welch t-tests using pot averages for Control vs Low, Control vs Medium and Control vs High. In Excel use T.TEST(control range, comparison range, 2, 3).",
-      "Create a Day " + day + " bar graph with fertilizer treatment on the x-axis, mean height (mm) on the y-axis and Â±1 standard deviation error bars.",
+      "Create a Day " + day + " bar graph with fertilizer treatment on the x-axis, mean height (mm) on the y-axis and plus or minus 1 standard deviation error bars.",
       (week === 0 ? "Start" : "Update") + " your growth-over-time line graph. Plot the treatment means for " +
       days.slice(0, index + 1).map(value => "Day " + value).join(", ") + ", with one line per treatment.",
     ]) + (week === 2 ? "<h3>Compare all three weeks in Excel</h3>" +
@@ -821,10 +856,10 @@ function renderData() {
       '</strong><br>Saved decision for pot ' + suspect.id + ': ' + actionNames[chosen] +
       '. Save the full code and download your updated workbook before leaving.</p>' : "";
   const nextLabel = index === 0 ? "Advance to Day 7" : index === 2 && !chosen ? "Make your Week 2 decision" : "Finish this week";
-  panel("Day " + day + " Â· Research team data", "Stop here and open your Excel workbook",
+  panel("Day " + day + " - Research team data", "Stop here and open your Excel workbook",
     "Download the populated workbook or copy the current heights into your existing workbook. Complete the written prompts in your Canvas lab document.",
-    decisionNote + '<p>Experiment ' + code + ' Â· 64 plant IDs. A blank height indicates no measurement.</p>' +
-    '<div class="actions">' + action("download", "Download populated Excel workbook") + action("copy", "Copy current dayâ€™s heights") +
+    decisionNote + '<p>Experiment ' + code + ' - 64 plant IDs. A blank height indicates no measurement.</p>' +
+    '<div class="actions">' + action("download", "Download populated Excel workbook") + action("copy", "Copy current day's heights") +
     '</div><p id="copy-status" role="status"></p>' +
     '<div class="data-groups">' + groupedTables + "</div>" + checkpoint + action("continue", nextLabel));
   listen("copy", async () => {
