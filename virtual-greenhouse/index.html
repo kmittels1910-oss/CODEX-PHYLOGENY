@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BIO 106 · Virtual Greenhouse</title>
+<style>
+:root {
+  color-scheme: light;
+  --ink: #182d26;
+  --muted: #475e53;
+  --green: #17543c;
+  --paper: #f3f6ee;
+  --line: #c9d7cc;
+  font: 100%/1.55 system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+[hidden] { display: none !important; }
+.wrap { width: min(68rem, 100% - 2rem); margin: auto; }
+.masthead { background: #143e31; color: #f6faed; padding: 2.3rem 0; }
+.masthead p:last-child { margin-bottom: 0; }
+h1, h2, h3, p { margin: 0 0 .8rem; }
+h1, h2 { font-family: Georgia, serif; line-height: 1.15; }
+h1 { font-size: clamp(2.3rem, 6vw, 4.5rem); }
+h2 { font-size: clamp(1.65rem, 4vw, 2.7rem); }
+h3 { margin-top: 1rem; }
+.eyebrow { font-size: .82rem; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
+.session, .panel { background: white; border: 1px solid var(--line); border-radius: .85rem; padding: clamp(1rem, 3vw, 2rem); margin: 1rem 0; }
+.session p { margin: .55rem 0 0; color: var(--muted); }
+.actions { display: flex; flex-wrap: wrap; gap: .55rem; margin: .55rem 0; }
+button, input { font: inherit; }
+button { min-height: 44px; color: white; background: var(--green); border: 1px solid transparent; border-radius: .55rem; padding: .52rem .9rem; cursor: pointer; font-weight: 650; }
+button:hover:not(:disabled) { background: #113b2b; }
+button:disabled { color: #52635a; background: #e7ece8; cursor: default; }
+:focus-visible { outline: 3px solid #a74520; outline-offset: 3px; }
+label { display: block; font-weight: 700; }
+input:not([type="range"]) { border: 1px solid #607e6d; border-radius: .5rem; padding: .5rem; width: 12rem; max-width: 100%; }
+input[type="range"] { display: block; width: 100%; margin: 1rem 0 .4rem; accent-color: var(--green); }
+output { font-variant-numeric: tabular-nums; font-weight: 700; }
+nav, .treatments, .bench, .specimens { display: grid; gap: .5rem; }
+nav { grid-template-columns: repeat(3, 1fr); }
+nav button { background: #e6f0e8; color: var(--ink); border-color: var(--line); }
+nav button:hover:not(:disabled), nav button[aria-current] { background: var(--green); color: white; }
+nav small { display: block; font-weight: 500; }
+.instruction { border-left: .28rem solid #507d61; background: #eaf3e7; padding: .75rem 1rem; margin: 1rem 0; }
+.reading { color: var(--muted); min-height: 2.2em; }
+.treatments, .bench, .specimens { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.treatments div, .bench span { background: #eaf3e7; padding: .6rem; border-radius: .45rem; text-align: center; }
+.light { margin: 0; display: flex; justify-content: space-between; color: var(--muted); }
+.bench { padding: .65rem; background: linear-gradient(90deg, #c6d5ce, #f0edc3); border-radius: .6rem; margin: .4rem 0 1rem; }
+.bench button { background: #f5faf5; color: var(--ink); border-color: #7b9b88; padding: .35rem .2rem; overflow-wrap: anywhere; }
+.bench button[aria-pressed="true"], .bench button:hover { background: var(--green); color: white; }
+figure { margin: 0; text-align: center; }
+.plant { display: block; width: 100%; max-height: 22rem; background: #f0f5ec; border-radius: .55rem; }
+.plant text { font: 6.5px system-ui, sans-serif; fill: #243d31; }
+.measure-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.2rem; align-items: center; }
+details { margin: .8rem 0; }
+summary { cursor: pointer; font-weight: 700; color: var(--green); padding: .3rem 0; }
+.table-scroll { overflow: auto; max-height: 25rem; margin: .7rem 0; }
+table { width: 100%; border-collapse: collapse; }
+caption { text-align: left; font-weight: 700; padding: .4rem; }
+th, td { text-align: left; border-bottom: 1px solid var(--line); padding: .45rem .55rem; }
+th { background: #eaf3e7; }
+.skip { position: absolute; top: -6rem; }
+.skip:focus { top: .5rem; left: .5rem; background: white; padding: .55rem; z-index: 1; }
+@media (max-width: 40rem) {
+  .measure-layout { grid-template-columns: 1fr; }
+  .plant { max-height: 16rem; }
+  nav button, .bench span, .bench button { padding: .25rem .15rem; font-size: .84rem; }
+  .bench { gap: .25rem; padding: .35rem; }
+  .treatments { grid-template-columns: repeat(2, 1fr); }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#activity">Skip to activity</a>
+<header class="masthead"><div class="wrap">
+<p class="eyebrow">BIO 106 · Organismal Biology</p>
+<h1>Virtual Greenhouse</h1>
+<p>Follow 64 <i>Brassica rapa</i> plants over 21 days. How does fertilizer concentration affect their growth?</p>
+</div></header>
+<main class="wrap">
+<section class="session" aria-label="Experiment setup">
+<form id="resume">
+<label for="code">Experiment Code</label>
+<div class="actions"><input id="code" placeholder="BR-7K4Q9" maxlength="8" spellcheck="false" autocapitalize="characters"><button>Resume</button><button type="button" id="new">Start new experiment</button></div>
+</form>
+<p id="session-status" role="status">Start a new experiment in Week 1 or enter your code to return to your plants.</p>
+</section>
+<nav id="weeks" aria-label="Lab weeks" hidden></nav>
+<div id="activity" tabindex="-1"><noscript>Enable JavaScript to run the greenhouse simulation.</noscript></div>
+</main>
+<script>
+"use strict";
+
+const Greenhouse = (() => {
+  const treatments = [
+    { name: "Control", id: "C", concentration: "0", growth: 20 },
+    { name: "Low", id: "L", concentration: "0.75", growth: 25 },
+    { name: "Medium", id: "M", concentration: "1.25", growth: 30 },
+    { name: "High", id: "H", concentration: "2.0", growth: 28 },
+  ];
+  const days = [0, 7, 14, 21];
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const validCode = /^BR-[A-HJ-NP-Z2-9]{5}$/;
+
+  function createCode() {
+    return "BR-" + Array.from(crypto.getRandomValues(new Uint8Array(5)),
+      byte => alphabet[byte % alphabet.length]).join("");
+  }
+
+  function randomGenerator(code) {
+    let state = 2166136261;
+    for (const character of code) state = Math.imul(state ^ character.charCodeAt(0), 16777619);
+    return () => {
+      state = (Math.imul(1664525, state) + 1013904223) >>> 0;
+      return state / 4294967296;
+    };
+  }
+
+  function createExperiment(code) {
+    const random = randomGenerator(code);
+    const variation = spread => (random() + random() - 1) * spread;
+    const pots = treatments.flatMap(treatment =>
+      Array.from({ length: 4 }, (_, index) => ({ id: treatment.id + (index + 1), treatment })));
+    const bench = [...pots];
+    for (let index = bench.length - 1; index > 0; index--) {
+      const other = Math.floor(random() * (index + 1));
+      [bench[index], bench[other]] = [bench[other], bench[index]];
+    }
+
+    const anomalyIndex = Math.floor(random() * 64);
+    const anomalyType = ["small", "leaning", "pale", "failed"][Math.floor(random() * 4)];
+    const plants = pots.flatMap((pot, potIndex) => {
+      const potEffect = variation(5);
+      const lightEffect = (bench.indexOf(pot) % 4 - 1.5) * 1.1;
+      return Array.from({ length: 4 }, (_, index) => {
+        const anomaly = potIndex * 4 + index === anomalyIndex ? anomalyType : "";
+        const baseline = Math.round(17 + variation(8));
+        const vigor = variation(pot.treatment.id === "H" ? 12 : 8);
+        const heights = [baseline];
+        for (let week = 1; week <= 3; week++) {
+          if (anomaly === "failed" && week >= 2) {
+            heights.push(null);
+          } else {
+            const slowdown = anomaly === "small" && week >= 2 ? 15 : 0;
+            const growth = pot.treatment.growth + vigor + potEffect + lightEffect + variation(5) - slowdown;
+            heights.push(heights[week - 1] + Math.max(2, Math.round(growth)));
+          }
+        }
+        return { id: pot.id + "-" + (index + 1), pot, heights, anomaly, bend: variation(26) };
+      });
+    });
+    return { pots, bench, plants };
+  }
+
+  function practicePlants(experiment, dayIndex) {
+    return treatments.map(treatment => {
+      const candidates = experiment.plants.filter(plant => plant.pot.treatment === treatment && plant.heights[dayIndex] !== null);
+      return candidates[(dayIndex * 5 + 2) % candidates.length];
+    });
+  }
+
+  function dataRows(experiment, dayIndex) {
+    return [["Treatment", "Fertilizer (g/L)", "Pot", "Plant ID", ...days.slice(0, dayIndex + 1).map(day => "Day " + day + " height (mm)")],
+      ...experiment.plants.map(plant => [
+        plant.pot.treatment.name, plant.pot.treatment.concentration, plant.pot.id, plant.id,
+        ...plant.heights.slice(0, dayIndex + 1).map(height => height ?? ""),
+      ])];
+  }
+
+  return { treatments, days, validCode, createCode, createExperiment, practicePlants, dataRows };
+})();
+if (typeof module !== "undefined") module.exports = Greenhouse;
+</script>
+<script>
+"use strict";
+
+const { days, treatments, createCode, validCode, createExperiment, practicePlants, dataRows } = Greenhouse;
+const activity = document.querySelector("#activity");
+const weeks = document.querySelector("#weeks");
+const codeInput = document.querySelector("#code");
+const sessionStatus = document.querySelector("#session-status");
+const themes = [
+  "Can we detect a fertilizer effect after one week?",
+  "Are fertilizer effects becoming stronger?",
+  "Is more fertilizer actually better?",
+];
+const resources = {
+  Light: "Light provides the energy plants use to make sugars by photosynthesis.",
+  Water: "Water supports photosynthesis, moves dissolved nutrients and helps cells stay firm.",
+  "Carbon dioxide": "Plants use carbon dioxide as a carbon source for making sugars.",
+  Nitrogen: "Plants need nitrogen to make proteins and chlorophyll.",
+  Phosphorus: "Plants use phosphorus in DNA, cell membranes and molecules that transfer energy.",
+  Potassium: "Potassium helps regulate water balance and activate enzymes.",
+  Temperature: "Temperature affects enzyme activity and how fast plants develop.",
+};
+const interpretations = [
+  ["Are treatment differences visible after one week?", "Which treatment has the highest mean height?", "Which treatment varies most?", "Do the t-tests agree with your visual impression of the bar graph?", "Is there enough evidence to recommend a concentration?"],
+  ["Are treatment differences larger than on Day 7?", "Have any comparisons changed in statistical significance?", "Why might a difference become easier to detect over time?", "Are the four growth lines approximately parallel?", "Does fertilizer appear to affect size, growth rate or both?", "How does biological variation affect your confidence?"],
+  ["How did fertilizer concentration affect growth?", "Was more fertilizer always associated with more growth?", "Which concentration would you recommend and what evidence supports it?", "How did your evidence change from Day 7 to Day 21?", "What limitations would you address in a follow-up experiment?"],
+];
+
+let experiment;
+let code;
+let week = 0;
+let stage = "design";
+let unlocked = 0;
+let finished = new Set();
+let revealed = new Set();
+let measured = new Set();
+let randomized = false;
+let dayIndex = 0;
+let specimen;
+let measurement;
+let selectedPot;
+
+function start(nextCode, returning) {
+  code = nextCode;
+  experiment = createExperiment(code);
+  codeInput.value = code;
+  week = unlocked = 0;
+  finished = new Set();
+  revealed = new Set();
+  randomized = false;
+  sessionStatus.textContent = "Experiment " + code + " loaded. Record this code in your Excel workbook and lab document. Use it again in Weeks 2 and 3.";
+  show(returning ? "return" : "design");
+}
+
+document.querySelector("#new").addEventListener("click", () => start(createCode(), false));
+document.querySelector("#resume").addEventListener("submit", event => {
+  event.preventDefault();
+  const entered = codeInput.value.trim().toUpperCase();
+  if (!validCode.test(entered)) {
+    sessionStatus.textContent = "Enter a code like BR-7K4Q9. Check that it uses five letters or digits after BR-.";
+    codeInput.focus();
+    return;
+  }
+  start(entered, true);
+});
+
+function show(nextStage) {
+  stage = nextStage;
+  render();
+  activity.focus();
+}
+
+function openWeek(index) {
+  week = index;
+  selectedPot = undefined;
+  show(revealed.has(week + 1) ? "data" : week === 0 ? "design" : "observe");
+}
+
+function renderWeeks() {
+  weeks.hidden = false;
+  weeks.replaceChildren();
+  themes.forEach((_, index) => {
+    const button = document.createElement("button");
+    const status = finished.has(index) ? "Completed" : week === index ? "Current" :
+      index > unlocked ? "Locked" : "Not started";
+    button.innerHTML = "Week " + (index + 1) + " · Day " + days[index + 1] + "<small>" + status + "</small>";
+    button.disabled = index > unlocked;
+    if (week === index) button.setAttribute("aria-current", "step");
+    button.addEventListener("click", () => openWeek(index));
+    weeks.append(button);
+  });
+}
+
+function panel(label, heading, instruction, content) {
+  activity.innerHTML = '<article class="panel"><p class="eyebrow">' + label + '</p><h2>' + heading +
+    '</h2><aside class="instruction"><strong>What to do now</strong><div>' + instruction +
+    '</div></aside>' + content + '</article>';
+}
+
+const action = (id, label) => '<button type="button" id="' + id + '">' + label + '</button>';
+const list = (items, tag = "ul") => "<" + tag + ">" + items.map(item => "<li>" + item + "</li>").join("") + "</" + tag + ">";
+const listen = (id, callback) => document.getElementById(id).addEventListener("click", callback);
+const weekLabel = () => "Week " + (week + 1) + " · Day " + days[week + 1];
+
+function render() {
+  renderWeeks();
+  if (stage === "return") {
+    panel("Returning to the greenhouse", "Choose your assigned week",
+      "Open the week assigned in Canvas. If you are returning for Week 2 or 3, use the code from your workbook.",
+      '<div class="actions">' + themes.map((_, index) => action("return-" + index, "Open Week " + (index + 1))).join("") + "</div>");
+    themes.forEach((_, index) => listen("return-" + index, () => {
+      unlocked = index;
+      openWeek(index);
+    }));
+  } else if (stage === "design") {
+    renderDesign();
+  } else if (stage === "bench") {
+    renderBench();
+  } else if (stage === "predict") {
+    panel(weekLabel(), "Make a prediction", "Record your hypothesis and prediction in your lab document before you inspect the seedlings.",
+      list(["Growth increases as fertilizer increases.", "Growth increases to an optimum and then levels off or decreases.", "Growth is similar at all concentrations."], "ol") +
+      action("predicted", "I have recorded my prediction"));
+    listen("predicted", () => revealed.has(0) ? show("data") : beginMeasurements(0));
+  } else if (stage === "observe") {
+    renderObservation();
+  } else if (stage === "measure") {
+    renderMeasurement();
+  } else if (stage === "data") {
+    renderData();
+  } else {
+    renderComplete();
+  }
+}
+
+function renderDesign() {
+  panel(weekLabel(), themes[week],
+    "Explore what plants need. In your lab document, identify the independent and dependent variables, at least four controlled variables and the purpose of the control treatment.",
+    "<p>Fertilizer adds mineral nutrients to the growth medium. This experiment varies fertilizer concentration and follows the same plants over time.</p>" +
+    '<div class="actions">' + Object.keys(resources).map((resource, index) => action("resource-" + index, resource)).join("") +
+    '</div><p id="resource" class="reading" role="status">Select a resource to see how it affects growth.</p>' +
+    '<div class="treatments">' + treatments.map(t => "<div><strong>" + t.name + "</strong><br>" + t.concentration + " g/L</div>").join("") + "</div>" +
+    "<p>Each concentration is applied to four pots. Each pot contains four plants, for 64 plants in all.</p>" +
+    "<details><summary>What if we used only one plant?</summary><p>Imagine the one plant in a treatment develops a damaged growing tip. Its short height could reflect the damage. Multiple pots help you separate a treatment pattern from the peculiarities of one pot or plant.</p></details>" +
+    action("bench", "Explore the greenhouse bench"));
+  Object.entries(resources).forEach(([name, description], index) =>
+    listen("resource-" + index, () => document.querySelector("#resource").textContent = name + " — " + description));
+  listen("bench", () => show("bench"));
+}
+
+function benchMarkup(pots, interactive = false) {
+  return '<p class="light">Less light <span aria-hidden="true">→</span> More light</p><div class="bench">' +
+    pots.map(pot => interactive ? action("pot-" + pot.id, pot.id + " · " + pot.treatment.name) :
+      "<span>" + pot.id + " · " + pot.treatment.name + "</span>").join("") + "</div>";
+}
+
+function renderBench() {
+  panel(weekLabel(), "Arrange the pots",
+    "Compare the grouped and randomized layouts. Record why randomization helps separate a fertilizer effect from a position effect.",
+    "<p>Light is slightly stronger toward the right side of the bench. Grouping pots can make a treatment sensitive to where its pots sit.</p>" +
+    benchMarkup(randomized ? experiment.bench : experiment.pots.map((_, index) => experiment.pots[(index % 4) * 4 + Math.floor(index / 4)])) +
+    "<p>" + (randomized ? "This arrangement is tied to your Experiment Code and carries forward each week." :
+      "The pots are currently grouped by treatment.") + '</p><div class="actions">' +
+    action("shuffle", randomized ? "Review grouped layout" : "Randomize my greenhouse") +
+    (randomized ? action("predict", "Continue to prediction") : "") + "</div>");
+  listen("shuffle", () => {
+    randomized = !randomized;
+    show("bench");
+  });
+  if (randomized) listen("predict", () => show("predict"));
+}
+
+function plantDrawing(plant, index, ruler = false, marker = 0) {
+  const height = plant.heights[index];
+  const bend = plant.bend + (index >= 2 && plant.anomaly === "leaning" ? 26 : 0);
+  const x = 75 + bend;
+  const top = 137 - 0.65 * height;
+  const leafColor = index >= 2 && plant.anomaly === "pale" ? "#8d831e" : "#32734e";
+  const leaves = [0.37, 0.67].map((fraction, leaf) => {
+    const y = 137 - 0.65 * height * fraction;
+    const center = 75 + bend * fraction;
+    const tip = center + (leaf === 0 ? -1 : 1) * (8 + height * 0.10);
+    const lift = height * 0.12;
+    return '<path fill="' + leafColor + '" d="M' + center + " " + y + " Q" + tip + " " + (y + 2) + " " + tip + " " + (y - lift) +
+      " Q" + center + " " + (y - lift) + " " + center + " " + y + 'Z"/>';
+  }).join("");
+  const scale = ruler ? Array.from({ length: 41 }, (_, tick) => {
+    const y = 137 - tick * 5 * 0.65;
+    return '<path d="M139 ' + y + "h" + (tick % 4 === 0 ? 9 : 5) + '" stroke="#395448"/>' +
+      (tick % 4 === 0 ? '<text x="151" y="' + (y + 2) + '">' + tick * 5 + "</text>" : "");
+  }).join("") : "";
+  return '<svg class="plant" viewBox="0 0 176 160" aria-hidden="true">' +
+    '<rect x="26" y="137" width="106" height="20" rx="3" fill="#73563c"/>' +
+    (height === null ? '<text x="38" y="104">Plant failed</text>' :
+      '<path d="M75 137 Q' + (75 - bend * 0.3) + " " + (137 - 0.65 * height * 0.56) + " " + x + " " + (top + 4) +
+      '" fill="none" stroke="#245b40" stroke-width="2"/>' + leaves +
+      '<path fill="' + leafColor + '" d="M' + x + " " + (top + 6) + "q-4 0 -4 -4q4 -4 8 0q0 4 -4 4Z" + '"/>') +
+    scale + (ruler ? '<path d="M23 ' + (137 - marker * 0.65) + 'H147" stroke="#ac4a21" stroke-dasharray="4 3"/>' : "") +
+    "</svg>";
+}
+
+function plantDescription(plant, index) {
+  const height = plant.heights[index];
+  if (height === null) return " · no measurement";
+  const lower = Math.floor(height / 10) * 10;
+  const appearance = index >= 2 && plant.anomaly === "pale" ? " · pale leaves" :
+    index >= 2 && plant.anomaly === "leaning" ? " · leaning stem" : "";
+  return '<span class="sr-only"> · about ' + lower + " to " + (lower + 10) + " mm" + appearance + "</span>";
+}
+
+function renderObservation() {
+  const index = week + 1;
+  const day = days[index];
+  const pot = selectedPot || experiment.bench[0];
+  const plants = experiment.plants.filter(plant => plant.pot === pot);
+  const anomaly = experiment.plants.find(plant => plant.anomaly);
+  const eventText = {
+    small: "has grown unusually slowly.",
+    leaning: "is leaning sharply.",
+    pale: "has noticeably paler leaves.",
+    failed: "failed between Day 7 and Day 14. The team recorded no height from Day 14 onward.",
+  };
+  panel(weekLabel(), themes[week],
+    (week === 0 ? "Seven days have passed. Inspect a few pots before measuring." : week === 1 ?
+      "Inspect several pots. In your lab document, record which treatment looks tallest and which looks most variable. Describe your evidence." :
+      "Inspect several pots. Record a preliminary fertilizer recommendation and the visual evidence behind it in your lab document."),
+    benchMarkup(experiment.bench, true) +
+    '<div id="pot-view"><h3>Pot ' + pot.id + ' · Day ' + day + '</h3><div class="specimens">' + plants.map(plant =>
+      "<figure>" + plantDrawing(plant, index) + "<figcaption>" + plant.id +
+      plantDescription(plant, index) + "</figcaption></figure>").join("") + "</div></div>" +
+    (week === 1 ? "<p><strong>Greenhouse note.</strong> Plant " + anomaly.id + " " + eventText[anomaly.anomaly] + "</p>" +
+      "<details><summary>Should you exclude an unusual observation?</summary><p>Keep valid measurements, including unusual ones. Exclusion requires a documented reason. If the plant failed and the team could not measure it, leave that height blank and document why. A blank is different from zero millimeters.</p></details>" : "") +
+    action("measure", "Measure four plants"));
+  experiment.bench.forEach(candidate => {
+    const button = document.getElementById("pot-" + candidate.id);
+    button.setAttribute("aria-pressed", String(candidate === pot));
+    button.addEventListener("click", () => {
+      selectedPot = candidate;
+      renderObservation();
+      document.getElementById("pot-" + candidate.id).focus();
+    });
+  });
+  listen("measure", () => beginMeasurements(index));
+}
+
+function accessibleRuler(height) {
+  const lower = Math.floor(height / 5) * 5;
+  return "<details><summary>Text ruler view</summary><p>The highest point falls between the " +
+    lower + " and " + (lower + 5) + " mm marks, including the lower mark. Estimate its height with the same slider.</p></details>";
+}
+
+function beginMeasurements(index) {
+  dayIndex = index;
+  measured = new Set();
+  specimen = 0;
+  measurement = null;
+  show("measure");
+}
+
+function renderMeasurement() {
+  const sample = practicePlants(experiment, dayIndex);
+  const plant = sample[specimen];
+  const estimate = measurement ?? 0;
+  panel("Day " + days[dayIndex] + " · Measurement practice", "Measure " + plant.id,
+    "Move the ruler marker to the highest point of the plant. Measure from the surface of the growth medium. Use the slider or arrow keys.",
+    '<div class="measure-layout"><div id="drawing">' + plantDrawing(plant, dayIndex, true, estimate) + '</div><div>' +
+    '<p>' + plant.pot.treatment.name + ' · Plant ' + (specimen + 1) + ' of 4</p>' + accessibleRuler(plant.heights[dayIndex]) +
+    '<label for="ruler">Ruler marker (mm)</label><input type="range" min="0" max="200" value="' + estimate +
+    '" id="ruler"><output id="estimate" for="ruler">' + estimate + ' mm</output><div class="actions">' +
+    action("compare", "Compare with team measurement") + '</div><p id="measurement-feedback" role="status"></p>' +
+    action("next-specimen", specimen === 3 ? "Open research team data" : "Measure next plant") + "</div></div>");
+  const slider = document.querySelector("#ruler");
+  const next = document.querySelector("#next-specimen");
+  next.disabled = true;
+  document.querySelector("#compare").disabled = true;
+  slider.addEventListener("input", () => {
+    measurement = Number(slider.value);
+    document.querySelector("#estimate").value = measurement + " mm";
+    document.querySelector("#drawing").innerHTML = plantDrawing(plant, dayIndex, true, measurement);
+    document.querySelector("#compare").disabled = false;
+  });
+  listen("compare", () => {
+    const reference = plant.heights[dayIndex];
+    document.querySelector("#measurement-feedback").textContent =
+      "Your reading was " + measurement + " mm. The research team recorded " + reference + " mm. Curved stems and leaf tips can make the highest point hard to judge.";
+    measured.add(plant.id);
+    slider.disabled = true;
+    document.querySelector("#compare").disabled = true;
+    next.disabled = false;
+    next.focus();
+  });
+  listen("next-specimen", () => {
+    if (measured.size === sample.length) {
+      revealed.add(dayIndex);
+      show("data");
+    } else {
+      specimen++;
+      measurement = null;
+      show("measure");
+    }
+  });
+}
+
+function tableMarkup(rows, caption) {
+  const [headings, ...values] = rows;
+  return '<div class="table-scroll" tabindex="0" role="region" aria-label="' + caption + '"><table><caption>' +
+    caption + "</caption><thead><tr>" + headings.map(heading => '<th scope="col">' + heading + "</th>").join("") +
+    "</tr></thead><tbody>" + values.map(row => "<tr>" + row.map(cell => "<td>" + cell + "</td>").join("") +
+      "</tr>").join("") + "</tbody></table></div>";
+}
+
+function renderData() {
+  const index = revealed.has(week + 1) ? week + 1 : 0;
+  const day = days[index];
+  const rows = dataRows(experiment, index);
+  const checkpoint = index === 0 ?
+    "<p>Paste the Day 0 baseline in Excel. In your lab document, explain what makes plant height hard to measure consistently.</p>" :
+    "<h3>In your Excel workbook</h3>" + list([
+      "Match Plant IDs and " + (week === 0 ? "enter Day 0 and Day 7" : "add Day " + day) + " heights. Keep earlier measurements in the same workbook.",
+      "For each treatment, find the Day " + day + " mean, sample variance and sample standard deviation. First average the available plants within each pot, then summarize the four pot averages. The pot is the replicate because fertilizer was applied to the whole pot.",
+      "Run two-tailed Welch t-tests using pot averages for Control vs Low, Control vs Medium and Control vs High. In Excel use T.TEST(control range, comparison range, 2, 3).",
+      "Create a Day " + day + " bar graph with fertilizer treatment on the x-axis, mean height (mm) on the y-axis and ±1 standard deviation error bars.",
+      (week === 0 ? "Start" : "Update") + " your growth-over-time line graph. Plot the treatment means for " +
+      days.slice(0, index + 1).map(value => "Day " + value).join(", ") + ", with one line per treatment.",
+    ]) + (week === 2 ? "<h3>Compare all three weeks in Excel</h3>" +
+      tableMarkup([["Treatment", "Day 7 mean", "Day 14 mean", "Day 21 mean"], ...treatments.map(treatment =>
+        [treatment.name, "", "", ""])], "Treatment means") +
+      tableMarkup([["Comparison", "Day 7 p", "Day 14 p", "Day 21 p"], ...treatments.slice(1).map(treatment =>
+        ["Control vs " + treatment.name, "", "", ""])], "Planned comparisons") : "") +
+    "<h3>In your lab document</h3>" + list(interpretations[week], "ol");
+  panel("Day " + day + " · Research team data", "Stop here and open your Excel workbook",
+    "Use the workbook and lab document provided in Canvas. Copy or download the raw heights, and complete the tasks below in those files.",
+    '<p>Experiment ' + code + ' · 64 plant IDs. A blank height indicates no measurement.</p>' +
+    '<div class="actions">' + action("copy", "Copy data for Excel") + action("download", "Download CSV") +
+    '</div><p id="copy-status" role="status"></p>' +
+    "<details><summary>View the raw data table</summary>" + tableMarkup(rows, "Measurements through Day " + day) +
+    "</details>" + checkpoint + action("continue", index === 0 ? "Advance to Day 7" : "Finish this week"));
+  listen("copy", async () => {
+    const status = document.querySelector("#copy-status");
+    try {
+      await navigator.clipboard.writeText(rows.map(row => row.join("\t")).join("\n"));
+      status.textContent = "Data copied. Paste it into your Excel workbook.";
+    } catch {
+      status.textContent = "Clipboard access is unavailable. Download the CSV to open the data in Excel.";
+    }
+  });
+  listen("download", () => {
+    const url = URL.createObjectURL(new Blob([rows.map(row => row.join(",")).join("\r\n")], { type: "text/csv" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = code + "-day-" + day + ".csv";
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+  listen("continue", () => {
+    if (index === 0) {
+      show("observe");
+      return;
+    }
+    finished.add(week);
+    show("complete");
+  });
+}
+
+function renderComplete() {
+  panel(weekLabel(), "Week " + (week + 1) + " complete",
+    "Save your Excel workbook and lab document. Follow your Canvas instructions for submission.",
+    (week < 2 ? "<p>Your plants have another week of growth. Return when Canvas assigns the next lab. Keep Experiment Code <strong>" +
+      code + "</strong> so you can reopen the same experiment.</p>" + action("advance", "Open assigned Week " + (week + 2)) :
+      "<p>You have reached the end of the 21-day experiment.</p>") +
+    '<div class="actions">' + action("review", "Review this week's data") + "</div>");
+  listen("review", () => show("data"));
+  if (week < 2) listen("advance", () => {
+    unlocked = Math.max(unlocked, week + 1);
+    openWeek(week + 1);
+  });
+}
+</script>
+</body>
+</html>
