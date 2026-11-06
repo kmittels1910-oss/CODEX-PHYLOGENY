@@ -539,18 +539,25 @@ function renderBench() {
   if (randomized) listen("predict", () => show("predict"));
 }
 
-function plantDrawing(plant, index, ruler = false, marker = 0) {
-  const height = plant.heights[index];
+// Each outline isolates one shoot from its source photograph.
+const shootFrames = [
+  { size: [97, 155], view: [0, 0, 97, 155] },
+  { size: [197, 68], view: [110, 1, 53, 66], outline: "110,1 153,1 163,16 146,30 161,39 151,51 146,67 129,67 128,46 112,38 125,26 110,16" },
+  { size: [290, 376], view: [170, 0, 86, 376], outline: "170,0 224,0 218,30 235,58 215,80 220,150 229,186 222,211 241,241 256,260 235,284 232,319 241,349 227,376 210,376 207,339 210,282 197,256 206,220 206,176 201,105 199,58 187,35 170,20" },
+  { size: [262, 514], view: [79, 10, 86, 504], outline: "79,10 137,10 145,40 127,63 123,130 131,182 120,225 133,259 124,312 148,356 165,388 150,416 123,432 125,471 132,514 113,514 108,455 95,435 85,413 106,386 109,347 108,298 105,232 105,170 105,100 99,67 79,46" },
+];
+
+function potDrawing(plants, index, target = null, marker = 0) {
   const baseline = 137;
   const scaleFactor = 0.65;
-  const shoot = height * scaleFactor;
-  const shootRatio = [97 / 155, 197 / 68, 290 / 376, 262 / 514][index];
-  const shootWidth = Math.max(14, Math.min(110, shoot * shootRatio));
-  const rootWidth = [19, 24, 32, 48][index];
+  const ruler = target !== null;
+  const potId = "glass-" + plants[0].pot.id;
+  const positions = [38, 59, 80, 101];
+  const rootWidth = [7, 10, 14, 17][index];
   const rootHeight = [17, 29, 44, 56][index];
-  const potId = "glass-" + plant.id;
-  const roots = '<image x="' + (69 - rootWidth / 2) + '" y="138" width="' + rootWidth +
-    '" height="' + rootHeight + '" preserveAspectRatio="none" href="' + photoSource("root-" + index) + '"/>';
+  const roots = plants.map((plant, slot) =>
+    '<image x="' + (positions[slot] - rootWidth / 2) + '" y="138" width="' + rootWidth +
+    '" height="' + rootHeight + '" preserveAspectRatio="none" href="' + photoSource("root-" + index) + '"/>').join("");
   const pot = '<defs><linearGradient id="' + potId + '">' +
     '<stop stop-color="#8ab4ae" stop-opacity=".4"/><stop offset=".13" stop-color="#f2ffff" stop-opacity=".25"/>' +
     '<stop offset=".42" stop-color="#fff" stop-opacity=".03"/><stop offset=".81" stop-color="#fff" stop-opacity=".06"/>' +
@@ -560,12 +567,38 @@ function plantDrawing(plant, index, ruler = false, marker = 0) {
     roots + '<path d="M24 136H114L107 198Q107 204 101 204H37Q31 204 31 198Z" fill="url(#' + potId + ')"/>' +
     '<path d="M29 142L35 195M110 142L104 193M37 201H101" fill="none" stroke="#f3ffff" stroke-opacity=".6"/>' +
     '<rect x="22" y="135" width="94" height="5" rx="2" fill="#e2f2ee" fill-opacity=".55" stroke="#93b3ad"/>';
-  const pale = index >= 2 && plant.anomaly === "pale" ? ' style="filter:saturate(.48)"' : "";
-  const tilt = index >= 2 && plant.anomaly === "leaning" ? 11 : plant.bend * 0.22;
-  const foliage = height === null ? '<text x="42" y="119">Plant failed</text>' :
-    '<g transform="translate(0 137) skewX(' + tilt + ') translate(0 -137)">' +
-    '<image x="' + (69 - shootWidth / 2) + '" y="' + (baseline - shoot) + '" width="' + shootWidth +
-    '" height="' + shoot + '" preserveAspectRatio="none" href="' + photoSource("shoot-" + index) + '"' + pale + '/></g>';
+  const frame = shootFrames[index];
+  const tiltFor = plant => index >= 2 && plant.anomaly === "leaning" ? 8 : plant.bend * 0.12;
+  const foliage = plants.map((plant, slot) => {
+    const x = positions[slot];
+    const height = plant.heights[index];
+    if (height === null) return '<text x="' + x + '" y="132" text-anchor="middle">×</text>';
+    const shoot = height * scaleFactor;
+    const width = Math.max(8, Math.min(24, shoot * frame.view[2] / frame.view[3]));
+    const pale = index >= 2 && plant.anomaly === "pale" ? ' style="filter:saturate(.48)"' : "";
+    const dim = ruler && plant !== target ? ' opacity=".4"' : "";
+    const clipId = "shoot-" + plant.id;
+    const outline = frame.outline ? '<defs><clipPath id="' + clipId + '"><polygon points="' +
+      frame.outline + '"/></clipPath></defs>' : "";
+    const clipping = frame.outline ? ' clip-path="url(#' + clipId + ')"' : "";
+    return '<g transform="translate(0 137) skewX(' + tiltFor(plant) + ') translate(0 -137)"' + dim + '>' +
+      '<svg x="' + (x - width / 2) + '" y="' + (baseline - shoot) + '" width="' + width +
+      '" height="' + shoot + '" viewBox="' + frame.view.join(" ") + '" preserveAspectRatio="none"' + pale + '>' +
+      outline + '<image width="' + frame.size[0] + '" height="' + frame.size[1] + '" href="' +
+      photoSource("shoot-" + index) + '"' + clipping + '/></svg></g>';
+  });
+  const targetSlot = plants.indexOf(target);
+  let arrow = "";
+  if (ruler) {
+    const shoot = target.heights[index] * scaleFactor;
+    const tip = baseline - shoot - 4;
+    const x = positions[targetSlot] - shoot * Math.tan(tiltFor(target) * Math.PI / 180);
+    arrow = '<path class="target-arrow" d="M' + x + " " + (tip - 12) + "v12m-4-5 4 5 4-5" +
+      '" fill="none" stroke="#a33b13" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+  }
+  const labels = plants.map((plant, slot) =>
+    '<text x="' + positions[slot] + '" y="214" text-anchor="middle"' +
+    (plant === target ? ' font-weight="bold"' : "") + ">" + (slot + 1) + "</text>").join("");
   const scale = ruler ? '<rect x="134" y="4" width="41" height="134" rx="3" fill="#eef4e9"/>' +
     Array.from({ length: 41 }, (_, tick) => {
       const y = baseline - tick * 5 * scaleFactor;
@@ -574,7 +607,9 @@ function plantDrawing(plant, index, ruler = false, marker = 0) {
     }).join("") +
     '<path d="M28 137H148" stroke="#597264" stroke-dasharray="2 2"/>' +
     '<path d="M23 ' + (baseline - marker * scaleFactor) + 'H147" stroke="#ac4a21" stroke-width="1.3" stroke-dasharray="4 3"/>' : "";
-  return '<svg class="plant" viewBox="0 0 176 212" aria-hidden="true">' + pot + foliage + scale + "</svg>";
+  const shoots = ruler ? foliage.filter((_, slot) => slot !== targetSlot).join("") + foliage[targetSlot] : foliage.join("");
+  return '<svg class="plant" viewBox="' + (ruler ? "0 -10 176 230" : "10 0 118 220") +
+    '" aria-hidden="true">' + pot + shoots + scale + labels + arrow + "</svg>";
 }
 
 function plantDescription(plant, index) {
@@ -603,9 +638,9 @@ function renderObservation() {
       "Inspect several pots. In your lab document, record which treatment looks tallest and which looks most variable. Describe your evidence." :
       "Inspect several pots. Record a preliminary fertilizer recommendation and the visual evidence behind it in your lab document."),
     benchMarkup(experiment.bench, true) +
-    '<div id="pot-view"><h3>Pot ' + pot.id + ' · Day ' + day + '</h3><div class="specimens">' + plants.map(plant =>
-      "<figure>" + plantDrawing(plant, index) + "<figcaption>" + plant.id +
-      plantDescription(plant, index) + "</figcaption></figure>").join("") + "</div></div>" +
+    '<div id="pot-view"><h3>Pot ' + pot.id + ' · Day ' + day + '</h3><figure class="pot-observation">' +
+    potDrawing(plants, index) + "<figcaption>" + plants.map(plant => plant.id + plantDescription(plant, index)).join(" · ") +
+    "</figcaption></figure></div>" +
     (week === 1 ? "<p><strong>Greenhouse note.</strong> Plant " + anomaly.id + " " + eventText[anomaly.anomaly] + "</p>" +
       "<details><summary>Should you exclude an unusual observation?</summary><p>Keep valid measurements, including unusual ones. Exclusion requires a documented reason. If the plant failed and the team could not measure it, leave that height blank and document why. A blank is different from zero millimeters.</p></details>" : "") +
     action("measure", "Measure four plants"));
@@ -638,11 +673,12 @@ function beginMeasurements(index) {
 function renderMeasurement() {
   const sample = practicePlants(experiment, dayIndex);
   const plant = sample[specimen];
+  const potPlants = experiment.plants.filter(candidate => candidate.pot === plant.pot);
   const estimate = measurement ?? 0;
   panel("Day " + days[dayIndex] + " · Measurement practice", "Measure " + plant.id,
-    "Move the ruler marker to the highest point of the plant. Measure from the surface of the growth medium. Use the slider or arrow keys.",
-    '<div class="measure-layout"><div id="drawing">' + plantDrawing(plant, dayIndex, true, estimate) + '</div><div>' +
-    '<p>' + plant.pot.treatment.name + ' · Plant ' + (specimen + 1) + ' of 4</p>' + accessibleRuler(plant.heights[dayIndex]) +
+    "Find the plant marked by the arrow. Use the slider or arrow keys to align the ruler marker with the highest point of that plant. Start at the soil line.",
+    '<div class="measure-layout"><div id="drawing">' + potDrawing(potPlants, dayIndex, plant, estimate) + '</div><div>' +
+    '<p>Pot ' + plant.pot.id + ' · ' + plant.pot.treatment.name + ' · Measure plant ' + (potPlants.indexOf(plant) + 1) + '</p><p>Practice measurement ' + (specimen + 1) + ' of 4</p>' + accessibleRuler(plant.heights[dayIndex]) +
     '<label for="ruler">Ruler marker (mm)</label><input type="range" min="0" max="200" value="' + estimate +
     '" id="ruler"><output id="estimate" for="ruler">' + estimate + ' mm</output><div class="actions">' +
     action("compare", "Compare with team measurement") + '</div><p id="measurement-feedback" role="status"></p>' +
@@ -654,7 +690,7 @@ function renderMeasurement() {
   slider.addEventListener("input", () => {
     measurement = Number(slider.value);
     document.querySelector("#estimate").value = measurement + " mm";
-    document.querySelector("#drawing").innerHTML = plantDrawing(plant, dayIndex, true, measurement);
+    document.querySelector("#drawing").innerHTML = potDrawing(potPlants, dayIndex, plant, measurement);
     document.querySelector("#compare").disabled = false;
   });
   listen("compare", () => {
